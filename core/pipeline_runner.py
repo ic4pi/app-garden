@@ -233,8 +233,11 @@ class PipelineRunner:
         builder_scores = [br.get("overall_score", 50) for br in ctx.files.builder_reviews]
         avg_builder = sum(builder_scores) / len(builder_scores) if builder_scores else 50
 
+        execution_score = getattr(winner, 'execution_score', 0.0)
+        confidence_score = getattr(winner, 'confidence_score', 50.0)
+
         ctx.pipe.complete(
-            f"Complete! Factory:{ctx.plan.factory_score} | Builder:{avg_builder:.0f} | App Execution:{winner.execution_score:.0f} | Confidence:{winner.confidence_score:.0f}"
+            f"Complete! Factory:{ctx.plan.factory_score} | Builder:{avg_builder:.0f} | App Execution:{execution_score:.0f} | Confidence:{confidence_score:.0f}"
         )
 
         results = self.o.build_results_payload(ctx, avg_builder_score=avg_builder)

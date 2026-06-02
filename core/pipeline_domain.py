@@ -271,6 +271,8 @@ CONFIDENCE GUIDE:
 
     async def rank_all(self, ctx_or_attempts, reviews=None) -> List[CanonicalRankedBuild]:
         """Rank via trait vectors. Accepts PipelineContext or legacy (attempts, reviews)."""
+        from itertools import zip_longest
+
         if isinstance(ctx_or_attempts, PipelineContext):
             ctx = ctx_or_attempts
             attempts = ctx.files.all_attempts
@@ -280,7 +282,9 @@ CONFIDENCE GUIDE:
             attempts = ctx_or_attempts
             write_ctx = None
         trait_vectors = []
-        for attempt, review in zip(attempts, reviews):
+        for attempt, review in zip_longest(attempts, reviews, fillvalue=None):
+            if attempt is None:
+                continue
             tv = await self._generate_trait_vector(attempt, review)
             trait_vectors.append((attempt, tv))
 
@@ -305,22 +309,28 @@ CONFIDENCE GUIDE:
         """Generate a trait vector for a single attempt."""
         prompt = self._construct_trait_prompt(attempt, review)
 
-        response = await self.llm.generate_code(
-            prompt,
-            Config.PRIMARYRANKER_MODEL,
-            self.SYSTEM_PROMPT,
-            provider=Config.PRIMARYRANKER_PROVIDER,
-            allow_retries=False,
-            allow_fallback_model=False,
-        )
-        return self._parse_trait_vector(response, attempt)
+        try:
+            response = await self.llm.generate_code(
+                prompt,
+                Config.PRIMARYRANKER_MODEL,
+                self.SYSTEM_PROMPT,
+                provider=Config.PRIMARYRANKER_PROVIDER,
+                allow_retries=False,
+                allow_fallback_model=False,
+            )
+            return self._parse_trait_vector(response, attempt)
+        except Exception as exc:
+            self._migration_logger.warning(
+                f"Trait vector LLM failed for {attempt.attempt_id}: {exc} — using fallback"
+            )
+            return self._fallback_trait_vector(attempt)
 
     def _construct_trait_prompt(self, attempt, review):
         """Build prompt for trait vector generation."""
         existing_dims = []
-        if hasattr(review, 'dimensions') and review.dimensions:
+        if review and hasattr(review, 'dimensions') and review.dimensions:
             existing_dims = [f"- {d.dimension}: {d.score}/100" for d in review.dimensions]
-        
+
         stack_name = attempt.tool_stack.name if attempt and hasattr(attempt, 'tool_stack') and attempt.tool_stack else "Unknown Stack"
         return f"""# TRAIT VECTOR EVALUATION
 ## Attempt #{attempt.attempt_number} | Stack: {stack_name} | Success: {attempt.success}
