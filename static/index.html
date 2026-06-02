@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Gardener - Code Generation Platform</title>
+<style>
+:root{--primary:#2d5016;--primary-light:#4a7c2e;--accent:#e8f5e9;--dark:#1a1a2e;--light:#f5f5f0;--border:#c8e6c9;--success:#4caf50;--warning:#ff9800;--error:#f44336;--gradient:linear-gradient(135deg,#2d5016 0%,#4a7c2e 50%,#66bb6a 100%);}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--light);color:var(--dark);line-height:1.6}
+.hero{background:var(--gradient);color:white;padding:4rem 2rem;text-align:center;position:relative;overflow:hidden}
+.hero h1{font-size:3.5rem;margin-bottom:1rem;text-shadow:2px 2px 4px rgba(0,0,0,0.2)}
+.hero p{font-size:1.3rem;opacity:0.9;max-width:600px;margin:0 auto}
+.container{max-width:1200px;margin:0 auto;padding:2rem}
+.card{background:white;border-radius:16px;padding:2rem;margin-bottom:2rem;box-shadow:0 4px 20px rgba(0,0,0,0.08);border:1px solid var(--border)}
+.card h2{color:var(--primary);margin-bottom:1.5rem;display:flex;align-items:center;gap:0.5rem}
+.form-group{margin-bottom:1.5rem}
+label{display:block;font-weight:600;margin-bottom:0.5rem;color:var(--primary)}
+input,select,textarea{width:100%;padding:0.875rem 1rem;border:2px solid var(--border);border-radius:10px;font-size:1rem;transition:all 0.3s;background:white}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primary-light);box-shadow:0 0 0 3px rgba(45,80,22,0.1)}
+textarea{min-height:120px;resize:vertical}
+.btn{display:inline-flex;align-items:center;gap:0.5rem;padding:1rem 2rem;border:none;border-radius:10px;font-size:1.1rem;font-weight:600;cursor:pointer;transition:all 0.3s;text-decoration:none}
+.btn-primary{background:var(--gradient);color:white;box-shadow:0 4px 15px rgba(45,80,22,0.3)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(45,80,22,0.4)}
+.progress-container{display:none;margin-top:2rem}
+.progress-container.active{display:block}
+.progress-bar{height:12px;background:var(--accent);border-radius:6px;overflow:hidden;margin-bottom:1rem}
+.progress-fill{height:100%;background:var(--gradient);border-radius:6px;transition:width 0.5s ease;width:0%}
+.progress-message{text-align:center;font-weight:600;color:var(--primary);font-size:1.1rem}
+.pipeline-visual{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin:2rem 0}
+.pipeline-step{background:var(--accent);padding:1.5rem;border-radius:12px;text-align:center;border:2px solid var(--border);transition:all 0.3s}
+.pipeline-step.active{background:var(--primary);color:white;border-color:var(--primary-light);transform:scale(1.05)}
+.pipeline-step .icon{font-size:2rem;margin-bottom:0.5rem}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.5rem;margin:2rem 0}
+.stat-card{background:white;padding:1.5rem;border-radius:12px;border-left:4px solid var(--primary);box-shadow:0 2px 10px rgba(0,0,0,0.05)}
+.stat-value{font-size:2rem;font-weight:700;color:var(--primary)}
+.stat-label{color:#666;font-size:0.9rem}
+table{width:100%;border-collapse:collapse;margin:1rem 0}
+th,td{padding:1rem;text-align:left;border-bottom:1px solid var(--border)}
+th{background:var(--accent);color:var(--primary);font-weight:600}
+tr:hover{background:rgba(232,245,233,0.5)}
+.badge{display:inline-block;padding:0.25rem 0.75rem;border-radius:20px;font-size:0.85rem;font-weight:600}
+.badge-success{background:rgba(76,175,80,0.2);color:var(--success)}
+.badge-warning{background:rgba(255,152,0,0.2);color:var(--warning)}
+.nav{background:white;padding:1rem 2rem;box-shadow:0 2px 10px rgba(0,0,0,0.05);position:sticky;top:0;z-index:100}
+.nav-content{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center}
+.nav-links{display:flex;gap:2rem}
+.nav-links a{color:var(--primary);text-decoration:none;font-weight:600;transition:color 0.3s}
+.nav-links a:hover{color:var(--primary-light)}
+.result-section{display:none}
+.result-section.active{display:block}
+.code-preview{background:#1a1a2e;color:#a6e3a1;padding:1.5rem;border-radius:12px;overflow-x:auto;font-family:'Fira Code','Consolas',monospace;font-size:0.9rem;line-height:1.5;max-height:500px;overflow-y:auto}
+.download-btn{display:inline-flex;align-items:center;gap:0.5rem;padding:1rem 2rem;background:var(--success);color:white;border-radius:10px;text-decoration:none;font-weight:600;margin-top:1rem;transition:all 0.3s}
+.download-btn:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(76,175,80,0.3)}
+@media(max-width:768px){.hero h1{font-size:2.5rem}.pipeline-visual{grid-template-columns:1fr}.stats-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav class="nav"><div class="nav-content"><div style="font-size:1.5rem;font-weight:700;color:var(--primary)">The Gardener</div><div class="nav-links"><a href="/">Home</a><a href="/leaderboard">Leaderboard</a><a href="/settings">Settings</a><a href="/docs">API Docs</a></div></div></nav>
+<div class="hero"><h1>The Gardener</h1><p>Multi-Agent Code Generation & Curation Platform<br>Where AI agents plant, grow, and harvest the finest code</p></div>
+<div class="container">
+<div class="card" id="buildForm"><h2>Start a New Build</h2>
+<form id="buildFormElement" action="/api/build" method="POST">
+<div class="form-group"><label for="code_type">Project Type</label><select name="code_type" id="code_type" required>
+<option value="website">Website</option><option value="web_app">Web Application</option>
+<option value="api_backend">API Backend</option><option value="cli_tool">CLI Tool</option>
+<option value="data_pipeline">Data Pipeline</option><option value="game">Game</option>
+<option value="mobile_app">Mobile App</option><option value="chatbot">Chatbot</option>
+<option value="dashboard">Dashboard</option><option value="e_commerce">E-Commerce</option>
+<option value="portfolio">Portfolio</option><option value="blog">Blog</option>
+<option value="custom">Custom</option></select></div>
+<div class="form-group"><label for="description">Project Description</label><textarea name="description" id="description" placeholder="Describe what you want to build. Be specific about features, target users, and goals." required></textarea></div>
+<div class="form-group"><label for="specific_requirements">Specific Requirements (Optional)</label><textarea name="specific_requirements" id="specific_requirements" placeholder="Any specific features, integrations, or constraints..."></textarea></div>
+<div class="form-group"><label for="target_audience">Target Audience (Optional)</label><input type="text" name="target_audience" id="target_audience" placeholder="e.g., Small businesses, Developers"></div>
+<div class="form-group"><label for="complexity_level">Complexity Level</label><select name="complexity_level" id="complexity_level">
+<option value="simple">Simple - MVP/Prototype</option><option value="medium" selected>Medium - Production Ready</option>
+<option value="complex">Complex - Enterprise Grade</option></select></div>
+<button type="submit" class="btn btn-primary">Plant & Grow Code</button></form></div>
+<div class="card progress-container" id="progressContainer"><h2>Build Progress</h2>
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+<div class="progress-message" id="progressMessage">Initializing...</div>
+<div class="pipeline-visual" id="pipelineVisual">
+<div class="pipeline-step" data-phase="meta_builder"><div class="icon">&#127793;</div><div>Meta-Builder</div><small>Planting seeds</small></div>
+<div class="pipeline-step" data-phase="builder"><div class="icon">&#128296;</div><div>Builder Bot</div><small>5 attempts</small></div>
+<div class="pipeline-step" data-phase="reviewer"><div class="icon">&#128269;</div><div>Reviewer</div><small>Analysis</small></div>
+<div class="pipeline-step" data-phase="ranker"><div class="icon">&#128202;</div><div>Ranker</div><small>Scoring</small></div>
+<div class="pipeline-step" data-phase="novelty"><div class="icon">&#10024;</div><div>Novelty Builder</div><small>3 iterations</small></div>
+<div class="pipeline-step" data-phase="complete"><div class="icon">&#127873;</div><div>Complete</div><small>Ready</small></div>
+</div></div>
+<div class="card result-section" id="resultsSection"><h2>Build Complete!</h2><div id="resultsContent"></div></div>
+<div class="card"><h2>Recent Builds</h2><div id="leaderboardPreview"><p>Loading leaderboard...</p></div>
+<a href="/leaderboard" class="btn btn-primary" style="margin-top:1rem">View Full Leaderboard</a></div>
+</div>
+<script>
+let buildId=null,pollInterval=null;
+document.getElementById('buildFormElement').addEventListener('submit',async(e)=>{
+e.preventDefault();
+const data=Object.fromEntries(new FormData(e.target));
+document.getElementById('progressContainer').classList.add('active');
+document.getElementById('resultsSection').classList.remove('active');
+try{
+const res=await fetch('/api/build',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+const result=await res.json();
+if(result.build_id){buildId=result.build_id;startPolling();}
+else showError(result.error||'Build failed');
+}catch(err){showError('Network error: '+err.message);}
+});
+function startPolling(){if(pollInterval)clearInterval(pollInterval);pollInterval=setInterval(async()=>{try{const res=await fetch('/api/progress/'+buildId);const p=await res.json();updateProgress(p);if(p.status==='complete'||p.status==='failed'){clearInterval(pollInterval);if(p.status==='complete')loadResults(buildId);}}catch(err){console.error(err);}},2000);}
+function updateProgress(p){document.getElementById('progressFill').style.width=p.percent+'%';document.getElementById('progressMessage').textContent=p.message;document.querySelectorAll('.pipeline-step').forEach(s=>{s.classList.remove('active');if(s.dataset.phase===p.phase)s.classList.add('active');});}
+async function loadResults(id){try{const res=await fetch('/api/results/'+id);const r=await res.json();if(r.status==='success')displayResults(r);else showError(r.error);}catch(err){showError('Failed to load results');}}
+function displayResults(r){const c=document.getElementById('resultsContent');c.innerHTML=`<div class="stats-grid"><div class="stat-card"><div class="stat-value">${r.winner.total_score}</div><div class="stat-label">Final Score / 100</div></div><div class="stat-card"><div class="stat-value">${r.winner.tool_stack_name}</div><div class="stat-label">Winning Stack</div></div><div class="stat-card"><div class="stat-value">${r.total_time_seconds.toFixed(1)}s</div><div class="stat-label">Build Time</div></div><div class="stat-card"><div class="stat-value">${r.novelty_attempts.filter(a=>a.success).length}/3</div><div class="stat-label">Novelty Iterations</div></div></div><h3>Rankings</h3><table><thead><tr><th>Rank</th><th>Stack</th><th>Score</th><th>Functionality</th><th>Quality</th><th>Novelty</th></tr></thead><tbody>${r.ranked_builds.map(b=>`<tr><td><strong>#${b.rank}</strong></td><td>${b.tool_stack_name}</td><td><span class="badge ${b.total_score>=80?'badge-success':b.total_score>=60?'badge-warning':''}">${b.total_score}</span></td><td>${b.functionality_score}</td><td>${b.code_quality_score}</td><td>${b.novelty_score}</td></tr>`).join('')}</tbody></table><h3>Generated Code Preview</h3><div class="code-preview">${r.final_code.substring(0,2000).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}...</div><a href="/api/download/${buildId}" class="download-btn">Download Complete Package</a>`;document.getElementById('resultsSection').classList.add('active');loadLeaderboardPreview();}
+function showError(m){document.getElementById('progressMessage').textContent='ERROR: '+m;document.getElementById('progressFill').style.width='100%';document.getElementById('progressFill').style.background='var(--error)';}
+async function loadLeaderboardPreview(){try{const res=await fetch('/api/leaderboard?limit=5');const d=await res.json();const el=document.getElementById('leaderboardPreview');if(d.entries&&d.entries.length){el.innerHTML=`<table><thead><tr><th>Project</th><th>Type</th><th>Score</th><th>Stack</th><th>Date</th></tr></thead><tbody>${d.entries.map(e=>`<tr><td>${e.project_name}</td><td>${e.code_type}</td><td><span class="badge badge-success">${e.score}</span></td><td>${e.tool_stack}</td><td>${new Date(e.created_at).toLocaleDateString()}</td></tr>`).join('')}</tbody></table>`;}else{el.innerHTML='<p>No builds yet. Be the first!</p>';}}catch(err){console.error(err);}}
+loadLeaderboardPreview();
+</script>
+</body>
+</html>

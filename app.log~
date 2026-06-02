@@ -1,0 +1,24 @@
+INFO:     Started server process [728976]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+AppGarden Platform Starting...
+Architecture: Meta-Builder, Builder Bot, LLM Reviewer, Ranker, Novelty Builder, Leaderboard, Download Manager
+API Integration: NVIDIA API, MiniMax M2.5, OpenRouter, Ollama
+============================================================
+
+Starting Uvicorn server...
+Open your browser to: http://localhost:8000
+Press CTRL+C to stop
+
+INFO:     127.0.0.1:39322 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39322 - "GET /api/leaderboard?limit=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39322 - "POST /api/build HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39322 - "GET /api/progress/pipeline_fbfb5ece HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39322 - "GET /api/progress/pipeline_fbfb5ece HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39322 - "GET /api/progress/pipeline_fbfb5ece HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39322 - "GET /api/progress/pipeline_fbfb5ece HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39322 - "GET /api/progress/pipeline_fbfb5ece HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39322 - "GET /api/progress/pipeline_fbfb5ece HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39322 - "GET /api/progress/pipeline_fbfb5ece HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39322 - "GET /api/progress/pipeline_fbfb5ece HTTP/1.1" 200 OK

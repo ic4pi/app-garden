@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settings — App Garden</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Exo+2:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#04040a;
+  --bg-raised:#0a0a14;
+  --bg-card:#0e0e1a;
+  --bg-hover:#14142a;
+  --primary:#7c3aed;
+  --primary-dim:#5b21b6;
+  --primary-glow:rgba(124,58,237,0.45);
+  --primary-light:#a78bfa;
+  --accent:#00f5d4;
+  --accent-glow:rgba(0,245,212,0.3);
+  --accent2:#f59e0b;
+  --success:#10b981;
+  --success-dim:#059669;
+  --warning:#f59e0b;
+  --error:#ef4444;
+  --text:#e2e8f0;
+  --text-dim:#94a3b8;
+  --text-muted:#475569;
+  --border:rgba(124,58,237,0.15);
+  --border-hover:rgba(124,58,237,0.35);
+  --glass:rgba(14,14,26,0.75);
+  --scan-line:rgba(0,245,212,0.03);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Exo 2',system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  line-height:1.6;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ===== SCAN LINE OVERLAY ===== */
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background:repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    var(--scan-line) 2px,
+    var(--scan-line) 4px
+  );
+  pointer-events:none;
+  z-index:9999;
+  animation:scanShift 8s linear infinite;
+}
+@keyframes scanShift{from{background-position:0 0}to{background-position:0 100px}}
+
+/* ===== GRID BG ===== */
+.bg-grid{
+  position:fixed;
+  inset:0;
+  z-index:-2;
+  background-image:
+    linear-gradient(rgba(124,58,237,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124,58,237,0.04) 1px, transparent 1px);
+  background-size:40px 40px;
+  animation:gridDrift 30s linear infinite;
+}
+@keyframes gridDrift{from{background-position:0 0}to{background-position:40px 40px}}
+
+.bg-mesh{
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  background:
+    radial-gradient(ellipse at 15% 25%, rgba(124,58,237,0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 85% 75%, rgba(0,245,212,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(124,58,237,0.04) 0%, transparent 70%);
+  animation:meshShift 20s ease-in-out infinite;
+}
+@keyframes meshShift{
+  0%,100%{transform:translate(0,0) scale(1)}
+  33%{transform:translate(20px,-15px) scale(1.03)}
+  66%{transform:translate(-15px,20px) scale(0.97)}
+}
+
+/* orbs */
+.orb{position:fixed;border-radius:50%;filter:blur(100px);opacity:0.12;pointer-events:none;z-index:-1}
+.orb-1{width:500px;height:500px;background:var(--primary);top:-150px;right:-150px;animation:orbFloat1 18s ease-in-out infinite}
+.orb-2{width:350px;height:350px;background:var(--accent);bottom:-80px;left:-80px;animation:orbFloat2 22s ease-in-out infinite}
+.orb-3{width:280px;height:280px;background:linear-gradient(135deg,var(--primary),var(--accent));top:45%;left:35%;animation:orbFloat3 25s ease-in-out infinite}
+@keyframes orbFloat1{0%,100%{transform:translate(0,0)}50%{transform:translate(-60px,70px)}}
+@keyframes orbFloat2{0%,100%{transform:translate(0,0)}50%{transform:translate(70px,-50px)}}
+@keyframes orbFloat3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(40px,40px) scale(1.15)}}
+
+/* ===== NAV ===== */
+.nav{
+  background:rgba(4,4,10,0.85);
+  backdrop-filter:blur(24px) saturate(1.8);
+  padding:0.875rem 2rem;
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:100;
+}
+.nav-content{max-width:1300px;margin:0 auto;display:flex;justify-content:space-between;align-items:center}
+.nav-brand{
+  font-family:'Rajdhani',sans-serif;
+  font-size:1.6rem;font-weight:700;
+  letter-spacing:0.08em;
+  background:linear-gradient(135deg,var(--primary-light) 0%,var(--accent) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  display:flex;align-items:center;gap:0.5rem;
+}
+.nav-brand::before{content:'🌿';font-size:1.2rem;-webkit-text-fill-color:initial;filter:drop-shadow(0 0 10px rgba(0,245,212,0.5))}
+.nav-links{display:flex;gap:2rem}
+.nav-links a{
+  color:var(--text-dim);text-decoration:none;font-weight:600;font-size:0.9rem;
+  letter-spacing:0.05em;text-transform:uppercase;transition:all 0.3s;position:relative;padding:0.5rem 0;
+}
+.nav-links a::after{
+  content:'';position:absolute;bottom:0;left:0;width:0;height:1px;
+  background:linear-gradient(90deg,var(--primary-light),var(--accent));transition:width 0.3s;
+}
+.nav-links a:hover{color:var(--accent)}
+.nav-links a:hover::after{width:100%}
+
+/* ===== HERO ===== */
+.hero{padding:4rem 2rem 2.5rem;text-align:center;position:relative}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:0.5rem;
+  padding:0.45rem 1.25rem;
+  background:linear-gradient(135deg,rgba(124,58,237,0.12),rgba(0,245,212,0.08));
+  border:1px solid rgba(124,58,237,0.25);border-radius:2px;
+  font-family:'JetBrains Mono',monospace;font-size:0.78rem;font-weight:500;
+  color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;
+  margin-bottom:1.5rem;
+  animation:badgePulse 4s ease-in-out infinite;
+  clip-path:polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+}
+@keyframes badgePulse{0%,100%{box-shadow:0 0 0 0 rgba(0,245,212,0.15)}50%{box-shadow:0 0 25px 4px rgba(0,245,212,0.08)}}
+.hero h1{
+  font-family:'Rajdhani',sans-serif;
+  font-size:3.8rem;font-weight:700;letter-spacing:0.04em;
+  margin-bottom:0.75rem;
+  background:linear-gradient(135deg,#fff 0%,var(--primary-light) 40%,var(--accent) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.hero p{font-size:1.05rem;color:var(--text-dim);max-width:520px;margin:0 auto;font-weight:300}
+
+/* ===== CONTAINER ===== */
+.container{max-width:1300px;margin:0 auto;padding:0 2rem 5rem}
+
+/* ===== CARDS ===== */
+.card{
+  background:var(--glass);
+  backdrop-filter:blur(20px) saturate(1.3);
+  border:1px solid var(--border);
+  border-radius:4px;
+  padding:2rem;
+  margin-bottom:2rem;
+  box-shadow:0 8px 40px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.02);
+  transition:all 0.4s cubic-bezier(0.4,0,0.2,1);
+  position:relative;overflow:hidden;
+  clip-path:polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+}
+.card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--primary-light),var(--accent),transparent);
+  opacity:0.4;
+}
+.card::after{
+  content:'';position:absolute;top:0;right:0;
+  width:20px;height:20px;
+  background:linear-gradient(225deg,var(--primary) 0%,transparent 60%);
+  opacity:0.5;
+}
+.card:hover{
+  border-color:var(--border-hover);
+  box-shadow:0 16px 60px rgba(124,58,237,0.1),inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.card-header{display:flex;align-items:center;gap:0.875rem;margin-bottom:1.75rem}
+.card-header h2{
+  font-family:'Rajdhani',sans-serif;
+  font-size:1.5rem;font-weight:700;letter-spacing:0.05em;color:var(--text);
+}
+.card-header .icon{
+  width:42px;height:42px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dim) 100%);
+  border-radius:4px;font-size:1.2rem;
+  box-shadow:0 4px 20px var(--primary-glow);
+  clip-path:polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%);
+}
+
+/* ===== AGENT GRID ===== */
+.agent-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:1.25rem}
+
+/* ===== AGENT CARD ===== */
+.agent-card{
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:4px;
+  padding:1.75rem;
+  transition:all 0.4s cubic-bezier(0.4,0,0.2,1);
+  position:relative;overflow:hidden;
+  clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));
+}
+.agent-card::before{
+  content:'';position:absolute;left:0;top:0;width:2px;height:100%;
+  background:linear-gradient(180deg,var(--primary),var(--accent));
+  opacity:0;transition:opacity 0.3s;
+}
+.agent-card:hover{border-color:var(--border-hover);box-shadow:0 12px 40px rgba(124,58,237,0.12)}
+.agent-card:hover::before{opacity:1}
+
+.agent-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.25rem}
+.agent-info{flex:1}
+.agent-role{
+  font-family:'JetBrains Mono',monospace;font-size:0.68rem;
+  text-transform:uppercase;letter-spacing:0.15em;font-weight:500;
+  color:var(--accent);margin-bottom:0.35rem;
+}
+.agent-name{
+  font-family:'Rajdhani',sans-serif;font-size:1.2rem;font-weight:700;
+  color:var(--text);margin-bottom:0.3rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;
+}
+.agent-desc{font-size:0.82rem;color:var(--text-muted);line-height:1.55}
+.agent-status{
+  width:8px;height:8px;border-radius:50%;background:var(--text-muted);
+  flex-shrink:0;margin-top:0.5rem;
+}
+.agent-status.online{background:var(--success);box-shadow:0 0 10px var(--success);animation:statusPulse 2s ease-in-out infinite}
+.agent-status.offline{background:var(--error)}
+.agent-status.testing{background:var(--warning);animation:statusPulse 0.7s ease-in-out infinite}
+@keyframes statusPulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+/* ===== PROVIDER BADGE ===== */
+.provider-badge{
+  display:inline-flex;align-items:center;gap:0.3rem;
+  padding:0.25rem 0.7rem;border-radius:2px;
+  font-family:'JetBrains Mono',monospace;font-size:0.72rem;font-weight:700;
+  border:1px solid;transition:all 0.3s;
+  clip-path:polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%);
+}
+.provider-badge.openrouter{background:rgba(190,24,93,0.1);color:#f472b6;border-color:rgba(190,24,93,0.25)}
+.provider-badge.nvidia{background:rgba(124,58,237,0.1);color:var(--primary-light);border-color:rgba(124,58,237,0.25)}
+.provider-badge.ollama{background:rgba(16,185,129,0.08);color:#6ee7b7;border-color:rgba(16,185,129,0.2)}
+.provider-badge.ollama-cloud{background:rgba(0,245,212,0.08);color:var(--accent);border-color:rgba(0,245,212,0.2)}
+
+/* ===== FORM ELEMENTS ===== */
+.form-group{margin-bottom:1.25rem}
+.form-group:last-child{margin-bottom:0}
+label{
+  display:block;font-weight:600;margin-bottom:0.5rem;
+  color:var(--text-dim);font-size:0.78rem;
+  text-transform:uppercase;letter-spacing:0.08em;
+  font-family:'JetBrains Mono',monospace;
+}
+input{
+  width:100%;padding:0.8rem 1rem;
+  border:1px solid var(--border);border-radius:3px;
+  font-size:0.9rem;background:var(--bg-raised);
+  color:var(--text);transition:all 0.3s;font-family:'JetBrains Mono',monospace;outline:none;
+}
+input:focus{
+  border-color:var(--primary);
+  box-shadow:0 0 0 2px rgba(124,58,237,0.15),0 0 20px rgba(124,58,237,0.08);
+}
+input::placeholder{color:var(--text-muted)}
+
+/* ===== PROVIDER RADIO PILLS ===== */
+.provider-pills{display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem}
+.provider-pill input[type="radio"]{display:none}
+.provider-pill label{
+  display:flex;align-items:center;gap:0.4rem;
+  padding:0.45rem 0.9rem;
+  border:1px solid var(--border);border-radius:3px;
+  cursor:pointer;transition:all 0.25s;
+  font-family:'JetBrains Mono',monospace;font-size:0.75rem;font-weight:600;
+  color:var(--text-muted);background:var(--bg-raised);
+  text-transform:uppercase;letter-spacing:0.06em;
+  clip-path:polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%);
+  margin-bottom:0;
+}
+/* ===== REMOVED PROVIDER DROPDOWNS ===== */
+.provider-pills{display:none}
+.provider-pill label:hover{border-color:var(--border-hover);color:var(--text-dim)}
+.provider-pill input[type="radio"]:checked + label{
+  background:linear-gradient(135deg,rgba(124,58,237,0.2),rgba(0,245,212,0.08));
+  border-color:var(--primary);color:var(--primary-light);
+  box-shadow:0 0 12px rgba(124,58,237,0.2);
+}
+.pill-or{background:rgba(190,24,93,0.12);border-color:rgba(190,24,93,0.2)}
+.pill-or:hover{border-color:rgba(190,24,93,0.4)!important;color:#f9a8d4!important}
+input[type="radio"].or-radio:checked + .pill-or{
+  background:rgba(190,24,93,0.18);border-color:#be185d;color:#f472b6;
+  box-shadow:0 0 12px rgba(190,24,93,0.2);
+}
+.pill-nv{background:rgba(124,58,237,0.08);border-color:rgba(124,58,237,0.15)}
+.pill-nv:hover{border-color:rgba(124,58,237,0.4)!important;color:var(--primary-light)!important}
+input[type="radio"].nv-radio:checked + .pill-nv{
+  background:rgba(124,58,237,0.2);border-color:var(--primary);color:var(--primary-light);
+  box-shadow:0 0 12px rgba(124,58,237,0.25);
+}
+.pill-ol{background:rgba(16,185,129,0.06);border-color:rgba(16,185,129,0.15)}
+.pill-ol:hover{border-color:rgba(16,185,129,0.35)!important;color:#6ee7b7!important}
+input[type="radio"].ol-radio:checked + .pill-ol{
+  background:rgba(16,185,129,0.15);border-color:var(--success);color:#6ee7b7;
+  box-shadow:0 0 12px rgba(16,185,129,0.18);
+}
+.pill-oc{background:rgba(0,245,212,0.05);border-color:rgba(0,245,212,0.12)}
+.pill-oc:hover{border-color:rgba(0,245,212,0.35)!important;color:var(--accent)!important}
+input[type="radio"].oc-radio:checked + .pill-oc{
+  background:rgba(0,245,212,0.12);border-color:var(--accent);color:var(--accent);
+  box-shadow:0 0 12px rgba(0,245,212,0.18);
+}
+
+/* ===== MODEL LIST ===== */
+.model-list-wrap{position:relative}
+.model-search{
+  width:100%;padding:0.65rem 0.9rem;
+  background:var(--bg-raised);border:1px solid var(--border);border-radius:3px 3px 0 0;
+  color:var(--text);font-family:'JetBrains Mono',monospace;font-size:0.82rem;outline:none;
+  transition:border-color 0.2s;
+}
+.model-search:focus{border-color:var(--primary)}
+.model-search::placeholder{color:var(--text-muted)}
+.model-options{
+  max-height:180px;overflow-y:auto;
+  background:var(--bg-raised);border:1px solid var(--border);border-top:none;
+  border-radius:0 0 3px 3px;
+}
+.model-options::-webkit-scrollbar{width:4px}
+.model-options::-webkit-scrollbar-track{background:transparent}
+.model-options::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.model-option{
+  padding:0.55rem 0.9rem;cursor:pointer;
+  font-family:'JetBrains Mono',monospace;font-size:0.78rem;
+  color:var(--text-dim);border-bottom:1px solid rgba(124,58,237,0.06);
+  transition:all 0.15s;display:flex;align-items:center;gap:0.5rem;
+}
+.model-option:last-child{border-bottom:none}
+.model-option:hover{background:rgba(124,58,237,0.1);color:var(--text)}
+.model-option.selected{
+  background:rgba(124,58,237,0.15);color:var(--primary-light);
+  border-left:2px solid var(--primary);
+}
+.model-option .model-tag{
+  font-size:0.65rem;padding:0.1rem 0.4rem;border-radius:2px;
+  background:rgba(0,245,212,0.1);color:var(--accent);
+  border:1px solid rgba(0,245,212,0.15);margin-left:auto;flex-shrink:0;
+}
+.hidden{display:none}
+
+/* ===== BUTTONS ===== */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:0.5rem;
+  padding:0.8rem 1.5rem;border:none;border-radius:3px;
+  font-size:0.9rem;font-weight:600;cursor:pointer;
+  transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
+  font-family:'Exo 2',sans-serif;letter-spacing:0.05em;
+  position:relative;overflow:hidden;
+  clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);
+}
+.btn::after{
+  content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.12),transparent);
+  transition:left 0.5s;
+}
+.btn:hover::after{left:100%}
+.btn:active{transform:scale(0.97)}
+.btn-primary{
+  background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dim) 100%);
+  color:white;box-shadow:0 4px 20px var(--primary-glow);
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px var(--primary-glow)}
+.btn-secondary{
+  background:var(--bg-hover);color:var(--text-dim);border:1px solid var(--border);
+}
+.btn-secondary:hover{border-color:var(--border-hover);color:var(--text)}
+.btn-test{
+  background:linear-gradient(135deg,rgba(16,185,129,0.12),rgba(5,150,105,0.08));
+  color:var(--success);border:1px solid rgba(16,185,129,0.2);
+  font-size:0.82rem;padding:0.55rem 1.1rem;
+}
+.btn-test:hover{border-color:rgba(16,185,129,0.4);box-shadow:0 4px 15px rgba(16,185,129,0.15)}
+.btn-test.testing{animation:testPulse 1s ease-in-out infinite;pointer-events:none}
+@keyframes testPulse{0%,100%{opacity:1}50%{opacity:0.5}}
+
+/* ===== TEST RESULT ===== */
+.test-result{
+  margin-top:0.75rem;padding:0.75rem 1rem;border-radius:3px;
+  font-size:0.85rem;font-weight:600;font-family:'JetBrains Mono',monospace;
+  display:none;align-items:center;gap:0.5rem;
+  animation:slideDown 0.3s ease-out;
+}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.test-result.show{display:flex}
+.test-result.success{background:rgba(16,185,129,0.08);color:var(--success);border:1px solid rgba(16,185,129,0.2)}
+.test-result.error{background:rgba(239,68,68,0.08);color:var(--error);border:1px solid rgba(239,68,68,0.2)}
+.test-result.warn{background:rgba(245,158,11,0.08);color:var(--warning);border:1px solid rgba(245,158,11,0.2)}
+
+/* ===== HINT ===== */
+.hint{color:var(--text-muted);font-size:0.75rem;margin-top:0.4rem;display:flex;align-items:center;gap:0.35rem;font-family:'JetBrains Mono',monospace}
+.hint::before{content:'//';font-size:0.85rem;color:var(--primary-dim)}
+
+/* ===== EXPANDABLE ===== */
+.expand-btn{
+  display:flex;align-items:center;justify-content:center;gap:0.5rem;
+  width:100%;padding:0.7rem;background:var(--bg-raised);border:1px solid var(--border);
+  border-radius:3px;color:var(--text-dim);font-weight:600;font-size:0.85rem;
+  cursor:pointer;transition:all 0.3s;margin-top:1rem;font-family:'Exo 2',sans-serif;
+}
+.expand-btn:hover{border-color:var(--border-hover);color:var(--text)}
+.expand-btn svg{transition:transform 0.3s}
+.expand-btn.expanded svg{transform:rotate(180deg)}
+.expand-content{max-height:0;overflow:hidden;transition:max-height 0.5s cubic-bezier(0.4,0,0.2,1)}
+.expand-content.open{max-height:2000px}
+
+/* ===== MINI GRID ===== */
+.agent-mini-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;
+  margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);
+}
+.agent-mini{
+  background:var(--bg-raised);border:1px solid var(--border);border-radius:3px;padding:1.25rem;transition:all 0.3s;
+}
+.agent-mini:hover{border-color:var(--border-hover)}
+.agent-mini .mini-name{font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:700;color:var(--text);margin-bottom:0.25rem}
+.agent-mini .mini-desc{font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem}
+.agent-mini .mini-link{font-size:0.78rem;color:var(--primary-light);font-weight:600;font-family:'JetBrains Mono',monospace}
+
+/* ===== LINEUP TEMPLATES ===== */
+.lineup-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem}
+.lineup-card{
+  background:var(--bg-card);border:1px solid var(--border);border-radius:4px;
+  padding:1.25rem;cursor:pointer;transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
+  position:relative;overflow:hidden;
+}
+.lineup-card::before{
+  content:'';position:absolute;inset:0;opacity:0;transition:opacity 0.3s;
+  background:linear-gradient(135deg,rgba(124,58,237,0.08),rgba(0,245,212,0.04));
+}
+.lineup-card:hover::before{opacity:1}
+.lineup-card:hover{border-color:var(--border-hover);transform:translateY(-3px);box-shadow:0 12px 40px rgba(124,58,237,0.12)}
+.lineup-card.active-lineup{
+  border-color:var(--primary);
+  box-shadow:0 0 25px rgba(124,58,237,0.2);
+}
+.lineup-card.active-lineup::before{opacity:1}
+.lineup-emoji{font-size:2rem;margin-bottom:0.6rem;display:block}
+.lineup-name{
+  font-family:'Rajdhani',sans-serif;font-size:1.05rem;font-weight:700;
+  color:var(--text);margin-bottom:0.35rem;letter-spacing:0.03em;
+}
+.lineup-desc{font-size:0.78rem;color:var(--text-muted);line-height:1.5;margin-bottom:0.75rem}
+.lineup-agents{display:flex;flex-direction:column;gap:0.2rem}
+.lineup-agent-row{
+  font-family:'JetBrains Mono',monospace;font-size:0.67rem;color:var(--text-muted);
+  display:flex;gap:0.4rem;align-items:baseline;
+}
+.lineup-agent-role{color:var(--accent);flex-shrink:0;width:80px}
+.lineup-agent-model{color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lineup-apply-btn{
+  width:100%;margin-top:0.9rem;padding:0.55rem;
+  background:linear-gradient(135deg,rgba(124,58,237,0.15),rgba(0,245,212,0.05));
+  border:1px solid rgba(124,58,237,0.2);border-radius:2px;
+  color:var(--primary-light);font-size:0.78rem;font-weight:700;
+  cursor:pointer;transition:all 0.2s;font-family:'Exo 2',sans-serif;letter-spacing:0.06em;text-transform:uppercase;
+}
+.lineup-apply-btn:hover{background:linear-gradient(135deg,rgba(124,58,237,0.25),rgba(0,245,212,0.1));border-color:var(--primary);box-shadow:0 4px 15px rgba(124,58,237,0.2)}
+
+/* ===== LEGACY ===== */
+.legacy-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem}
+.legacy-item{background:var(--bg-raised);padding:1rem;border-radius:3px;border:1px solid var(--border)}
+.legacy-item code{color:var(--accent);font-size:0.82rem;font-family:'JetBrains Mono',monospace}
+.legacy-item div{color:var(--text-muted);font-size:0.78rem;margin-top:0.25rem}
+
+/* ===== SAVE BAR ===== */
+.save-bar{
+  position:sticky;bottom:1.5rem;display:flex;justify-content:center;gap:1rem;padding:1.25rem;
+  background:rgba(4,4,10,0.9);backdrop-filter:blur(24px) saturate(1.5);
+  border:1px solid var(--border);border-radius:4px;
+  box-shadow:0 8px 40px rgba(0,0,0,0.5),0 0 40px rgba(124,58,237,0.05);z-index:50;margin-top:2rem;
+  clip-path:polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0% 100%);
+}
+.save-bar .btn-primary{font-size:1rem;padding:0.9rem 2.5rem}
+
+/* ===== SAVE STATUS ===== */
+.save-status{
+  position:fixed;top:1.5rem;right:1.5rem;
+  padding:1rem 1.5rem;border-radius:3px;color:white;font-weight:700;
+  font-size:0.9rem;opacity:0;transform:translateX(120px);
+  transition:all 0.5s cubic-bezier(0.4,0,0.2,1);
+  backdrop-filter:blur(20px);z-index:1000;
+  display:flex;align-items:center;gap:0.75rem;
+  box-shadow:0 8px 32px rgba(0,0,0,0.4);font-family:'JetBrains Mono',monospace;
+  clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
+}
+.save-status.show{opacity:1;transform:translateX(0)}
+.save-status.success{background:linear-gradient(135deg,rgba(16,185,129,0.92),rgba(5,150,105,0.92))}
+.save-status.error{background:linear-gradient(135deg,rgba(239,68,68,0.92),rgba(185,28,28,0.92))}
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeInUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+.card{animation:fadeInUp 0.5s ease-out both}
+.card:nth-child(1){animation-delay:0.05s}
+.card:nth-child(2){animation-delay:0.12s}
+.card:nth-child(3){animation-delay:0.19s}
+.card:nth-child(4){animation-delay:0.26s}
+.card:nth-child(5){animation-delay:0.33s}
+.card:nth-child(6){animation-delay:0.4s}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--border-hover)}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px){
+  .hero h1{font-size:2.4rem}
+  .agent-grid{grid-template-columns:1fr}
+  .lineup-grid{grid-template-columns:1fr 1fr}
+  .nav-links{display:none}
+  .save-bar{flex-direction:column}
+  .save-bar .btn{width:100%}
+}
+@media(max-width:500px){
+  .lineup-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-mesh"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<nav class="nav">
+  <div class="nav-content">
+    <div class="nav-brand">App Garden</div>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/leaderboard">Leaderboard</a>
+      <a href="/settings">Settings</a>
+    </div>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-badge">⚙ SYSTEM CONFIG // 9 AGENTS ACTIVE</div>
+  <h1>Agent Configuration</h1>
+  <p>Map providers and models to each role in the multi-agent pipeline. Test connections before saving.</p>
+</div>
+
+<div class="container">
+
+<!-- API KEYS -->
+<div class="card">
+  <div class="card-header">
+    <div class="icon">🔐</div>
+    <h2>API Keys &amp; Hosts</h2>
+  </div>
+  <div class="agent-grid">
+    <div class="form-group" id="nvidia_keys_group">
+      <label>NVIDIA API Keys</label>
+      <div id="nvidia_keys_list"></div>
+      <button class="btn btn-secondary" onclick="addKeyRow('nvidia')">+ Add key</button>
+      <div class="hint">Multiple keys allowed. Keys rotate when exhausted.</div>
+    </div>
+    <div class="form-group" id="openrouter_keys_group">
+      <label>OpenRouter API Keys</label>
+      <div id="openrouter_keys_list"></div>
+      <div id="openrouter_keys_list_paid"></div>
+      <button class="btn btn-secondary" onclick="addKeyRow('openrouter')">+ Add free key</button>
+      <button class="btn btn-secondary" onclick="addKeyRow('openrouter_paid', true)">+ Add paid key</button>
+      <div class="hint">Keep paid keys separate (used as fallback).</div>
+    </div>
+    <div class="form-group">
+      <label>Ollama Local Host</label>
+      <input type="text" id="ollama_host" value="http://localhost:11434">
+      <div class="hint">Run ollama serve locally</div>
+    </div>
+    <div class="form-group">
+      <label>Ollama Cloud Host</label>
+      <input type="text" id="ollama_cloud_host" placeholder="https://your-ollama-instance.com">
+      <div class="hint">For remote Ollama deployments</div>
+    </div>
+  </div>
+</div>
+
+<!-- BUILDERS -->
+<div class="card">
+  <div class="card-header">
+    <div class="icon">🛠️</div>
+    <h2>Builders <span style="font-size:0.85rem;color:var(--text-muted);font-weight:400">— 2 agents that generate code</span></h2>
+  </div>
+  <div class="agent-grid">
+    <!-- Responsible Builder -->
+    <div class="agent-card" id="card-responsible">
+      <div class="agent-header">
+        <div class="agent-info">
+          <div class="agent-role">// Builder 01</div>
+          <div class="agent-name">🛡️ Responsible Builder <span class="provider-badge openrouter" id="badge-responsible">OpenRouter</span></div>
+          <div class="agent-desc">Production-grade, conservative builds. All 5 stack attempts in Round 1. Prioritizes correctness and completeness.</div>
+        </div>
+        <div class="agent-status" id="status-responsible"></div>
+      </div>
+      <div class="form-group">
+        <label>Model (free text)</label>
+        <input type="text" id="responsible_model_input" class="model-search" placeholder="Type or paste model name...">
+        <div class="hint">Enter any model string. Last 10 entries are saved for quick reuse.</div>
+      </div>
+      <div class="form-group">
+        <label>Model</label>
+        <div class="model-list-wrap">
+          <input class="model-search" id="responsible_search" placeholder="Search or type model..." oninput="filterModels('responsible')">
+          <div class="model-options" id="responsible_models"></div>
+        </div>
+        <input type="hidden" id="responsible_model">
+      </div>
+      <button class="btn btn-test" id="btn-test-responsible" onclick="testAgent('responsible')">Test Connection</button>
+      <div id="test-responsible" class="test-result"></div>
+    </div>
+
+    <!-- Creative Builder -->
+    <div class="agent-card" id="card-creative">
+      <div class="agent-header">
+        <div class="agent-info">
+          <div class="agent-role">// Builder 02</div>
+          <div class="agent-name">🎨 Creative Builder <span class="provider-badge openrouter" id="badge-creative">OpenRouter</span></div>
+          <div class="agent-desc">Novel, experimental code. Round 1 attempts 1-2. Also drives feedback-based Round 2 rebuilds.</div>
+        </div>
+        <div class="agent-status" id="status-creative"></div>
+      </div>
+      <div class="form-group">
+        <label>Model (free text)</label>
+        <input type="text" id="creative_model_input" class="model-search" placeholder="Type or paste model name...">
+        <div class="hint">Enter any model string. Last 10 entries are saved for quick reuse.</div>
+      </div>
+      <div class="form-group">
+        <label>Model</label>
+        <div class="model-list-wrap">
+          <input class="model-search" id="creative_search" placeholder="Search or type model..." oninput="filterModels('creative')">
+          <div class="model-options" id="creative_models"></div>
+        </div>
+        <input type="hidden" id="creative_model">
+      </div>
+      <button class="btn btn-test" id="btn-test-creative" onclick="testAgent('creative')">Test Connection</button>
+      <div id="test-creative" class="test-result"></div>
+    </div>
+  </div>
+
+  <button class="expand-btn" onclick="toggleExpand(this,'expand-builders')">
+    <span>Advanced Builder Assignments</span>
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+  </button>
+  <div class="expand-content" id="expand-builders">
+    <div class="agent-mini-grid">
+      <div class="agent-mini">
+        <div class="mini-name">⚡ Creative Builder (Round 2)</div>
+        <div class="mini-desc">Feedback-driven rebuilds after Round 1 reviews. Uses same config as Creative Builder above.</div>
+        <div class="mini-link">→ Controlled by Creative Builder settings</div>
+      </div>
+      <div class="agent-mini">
+        <div class="mini-name">✨ Novelty Builder</div>
+        <div class="mini-desc">3 creative iterations on the winning build. Odd iterations use Novelty model, even use MiniMax.</div>
+        <div class="form-group" style="margin-top:0.75rem">
+          <label style="font-size:0.72rem">Novelty Model Override</label>
+          <input type="text" id="novelty_model" placeholder="Same as Creative Builder">
+        </div>
+      </div>
+      <div class="agent-mini">
+        <div class="mini-name">🔧 MiniMax / Round-2 Model</div>
+        <div class="mini-desc">Used for Creative Builder attempts 3-5 and Novelty even iterations.</div>
+        <div class="form-group" style="margin-top:0.75rem">
+          <label style="font-size:0.72rem">MiniMax Model</label>
+          <input type="text" id="minimax_model" placeholder="minimax/minimax-m2.5">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REVIEWERS -->
+<div class="card">
+  <div class="card-header">
+    <div class="icon">🔍</div>
+    <h2>Reviewers <span style="font-size:0.85rem;color:var(--text-muted);font-weight:400">— 5 agents that critique code</span></h2>
+  </div>
+  <div class="agent-grid">
+
+    <!-- Code Quality -->
+    <div class="agent-card" id="card-codequality">
+      <div class="agent-header">
+        <div class="agent-info">
+          <div class="agent-role">// Reviewer 01</div>
+          <div class="agent-name">🔍 Code Quality <span class="provider-badge openrouter" id="badge-codequality">OpenRouter</span></div>
+          <div class="agent-desc">Judges correctness, architecture, tool efficiency. Scores 0-100. Harsh grading.</div>
+        </div>
+        <div class="agent-status" id="status-codequality"></div>
+      </div>
+      <div class="form-group">
+        <label>Model (free text)</label>
+        <input type="text" id="codequality_model_input" class="model-search" placeholder="Type or paste model name...">
+        <div class="hint">Enter any model string. Last 10 entries are saved for quick reuse.</div>
+      </div>
+      <button class="btn btn-test" id="btn-test-codequality" onclick="testAgent('codequality')">Test Connection</button>
+      <div id="test-codequality" class="test-result"></div>
+    </div>
+
+    <!-- Product Quality -->
+    <div class="agent-card" id="card-product">
+      <div class="agent-header">
+        <div class="agent-info">
+          <div class="agent-role">// Reviewer 02</div>
+          <div class="agent-name">💡 Product Quality <span class="provider-badge openrouter" id="badge-product">OpenRouter</span></div>
+          <div class="agent-desc">Judges novelty, documentation, UX, and real-world product value. Scores based on delight potential.</div>
+        </div>
+        <div class="agent-status" id="status-product"></div>
+      </div>
+      <div class="form-group">
+        <label>Model (free text)</label>
+        <input type="text" id="product_model_input" class="model-search" placeholder="Type or paste model name...">
+        <div class="hint">Enter any model string. Last 10 entries are saved for quick reuse.</div>
+      </div>
+      <button class="btn btn-test" id="btn-test-product" onclick="testAgent('product')">Test Connection</button>
+      <div id="test-product" class="test-result"></div>
+    </div>
+
+    <!-- Creative Coder -->
+    <div class="agent-card" id="card-creativecoder">
+      <div class="agent-header">
+        <div class="agent-info">
+          <div class="agent-role">// Reviewer 03</div>
+          <div class="agent-name">🌟 Creative Coder <span class="provider-badge openrouter" id="badge-creativecoder">OpenRouter</span></div>
+          <div class="agent-desc">The visionary. Judges potential, wild ideas, missed opportunities, and "wow factor".</div>
+        </div>
+        <div class="agent-status" id="status-creativecoder"></div>
+      </div>
+      <div class="form-group">
+        <label>Model (free text)</label>
+        <input type="text" id="creativecoder_model_input" class="model-search" placeholder="Type or paste model name...">
+        <div class="hint">Enter any model string. Last 10 entries are saved for quick reuse.</div>
+      </div>
+      <button class="btn btn-test" id="btn-test-creativecoder" onclick="testAgent('creativecoder')">Test Connection</button>
+      <div id="test-creativecoder" class="test-result"></div>
+    </div>
+
+    <!-- Factory Reviewer -->
+    <div class="agent-card" id="card-factory">
+      <div class="agent-header">
+        <div class="agent-info">
+          <div class="agent-role">// Reviewer 04</div>
+          <div class="agent-name">🏭 Factory Reviewer <span class="provider-badge openrouter" id="badge-factory">OpenRouter</span></div>
+          <div class="agent-desc">Evaluates whether the Factory Builder chose appropriate stacks and set clear, achievable goals.</div>
+        </div>
+        <div class="agent-status" id="status-factory"></div>
+      </div>
+      <div class="form-group">
+        <label>Model (free text)</label>
+        <input type="text" id="factory_model_input" class="model-search" placeholder="Type or paste model name...">
+        <div class="hint">Enter any model string. Last 10 entries are saved for quick reuse.</div>
+      </div>
+      <button class="btn btn-test" id="btn-test-factory" onclick="testAgent('factory')">Test Connection</button>
+      <div id="test-factory" class="test-result"></div>
+    </div>
+
+    <!-- Builder Reviewer -->
+    <div class="agent-card" id="card-builderreviewer">
+      <div class="agent-header">
+        <div class="agent-info">
+          <div class="agent-role">// Reviewer 05</div>
+          <div class="agent-name">💻 Builder Reviewer <span class="provider-badge openrouter" id="badge-builderreviewer">OpenRouter</span></div>
+          <div class="agent-desc">Evaluates the Builder's raw coding skill: clean code, best practices, error handling, effective stack usage.</div>
+        </div>
+        <div class="agent-status" id="status-builderreviewer"></div>
+      </div>
+      <div class="form-group">
+        <label>Model (free text)</label>
+        <input type="text" id="builderreviewer_model_input" class="model-search" placeholder="Type or paste model name...">
+        <div class="hint">Enter any model string. Last 10 entries are saved for quick reuse.</div>
+      </div>
+      <button class="btn btn-test" id="btn-test-builderreviewer" onclick="testAgent('builderreviewer')">Test Connection</button>
+      <div id="test-builderreviewer" class="test-result"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- RANKERS -->
+<div class="card">
+  <div class="card-header">
+    <div class="icon">📊</div>
+    <h2>Rankers <span style="font-size:0.85rem;color:var(--text-muted);font-weight:400">— 2 agents that score and rank builds</span></h2>
+  </div>
+  <div class="agent-grid">
+
+    <!-- Primary Ranker -->
+    <div class="agent-card" id="card-primaryranker">
+      <div class="agent-header">
+        <div class="agent-info">
+          <div class="agent-role">// Ranker 01</div>
+          <div class="agent-name">📊 Primary Ranker <span class="provider-badge openrouter" id="badge-primaryranker">OpenRouter</span></div>
+          <div class="agent-desc">Main scoring agent. Weights: Functionality 30%, Code Quality 25%, Tool Optimization 20%, Novelty 15%, Docs 10%.</div>
+        </div>
+        <div class="agent-status" id="status-primaryranker"></div>
+      </div>
+      <div class="form-group">
+        <label>Model (free text)</label>
+        <input type="text" id="primaryranker_model_input" class="model-search" placeholder="Type or paste model name...">
+        <div class="hint">Enter any model string. Last 10 entries are saved for quick reuse.</div>
+      </div>
+      <button class="btn btn-test" id="btn-test-primaryranker" onclick="testAgent('primaryranker')">Test Connection</button>
+      <div id="test-primaryranker" class="test-result"></div>
+    </div>
+
+    <!-- Fallback Ranker -->
+    <div class="agent-card" id="card-fallbackranker">
+      <div class="agent-header">
+        <div class="agent-info">
+          <div class="agent-role">// Ranker 02</div>
+          <div class="agent-name">🔄 Fallback Ranker <span class="provider-badge openrouter" id="badge-fallbackranker">OpenRouter</span></div>
+          <div class="agent-desc">Activated automatically when Primary Ranker hits rate limits (HTTP 429). Use a different provider/model.</div>
+        </div>
+        <div class="agent-status" id="status-fallbackranker"></div>
+      </div>
+      <div class="form-group">
+        <label>Model (free text)</label>
+        <input type="text" id="fallbackranker_model_input" class="model-search" placeholder="Type or paste model name...">
+        <div class="hint">Enter any model string. Last 10 entries are saved for quick reuse.</div>
+      </div>
+      <button class="btn btn-test" id="btn-test-fallbackranker" onclick="testAgent('fallbackranker')">Test Connection</button>
+      <div id="test-fallbackranker" class="test-result"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- LINEUP TEMPLATES -->
+<div class="card">
+  <div class="card-header">
+    <div class="icon">🧬</div>
+    <h2>Lineup Templates <span style="font-size:0.85rem;color:var(--text-muted);font-weight:400">— one-click team configurations</span></h2>
+  </div>
+  <div class="lineup-grid" id="lineup-grid">
+
+    <!-- LINEUP 1: Recursive Development Team -->
+    <div class="lineup-card" id="lineup-recursive" onclick="applyLineup('recursive')">
+      <span class="lineup-emoji">🌀</span>
+      <div class="lineup-name">Recursive Development Team</div>
+      <div class="lineup-desc">Iterative self-review and continuous refinement across builders, reviewers, and rankers.</div>
+      <div class="lineup-agents">
+        <div class="lineup-agent-row"><span class="lineup-agent-role">Builder 1</span><span class="lineup-agent-model">openai/gpt-oss-120b:free</span></div>
+        <div class="lineup-agent-row"><span class="lineup-agent-role">Builder 2</span><span class="lineup-agent-model">z-ai/glm-4.5-air:free</span></div>
+        <div class="lineup-agent-row"><span class="lineup-agent-role">Code Rev</span><span class="lineup-agent-model">arcee-ai/trinity-large-thinking:free</span></div>
+        <div class="lineup-agent-row"><span class="lineup-agent-role">Product Rev</span><span class="lineup-agent-model">google/gemma-4-31b-it:free</span></div>
+        <div class="lineup-agent-row"><span class="lineup-agent-role">Ranker 1</span><span class="lineup-agent-model">google/gemma-4-26b-a4b-it:free</span></div>
+      </div>
+      <button class="lineup-apply-btn" onclick="event.stopPropagation();applyLineup(this.closest('.lineup-card').id.replace('lineup-',''))">⚡ Apply Lineup</button>
+    </div>
+
+    <!-- LINEUP 2: Best Possible Results Team -->
+    <div class="lineup-card" id="lineup-bestpossible" onclick="applyLineup('bestpossible')">
+      <span class="lineup-emoji">🚀</span>
+      <div class="lineup-name">Best Possible Results Team</div>
+      <div class="lineup-desc">Top-tier model stack tuned for maximum quality, scoring, and output coherence.</div>
+      <div class="lineup-agents">
+        <div class="lineup-agent-row"><span class="lineup-agent-role">Builder 1</span><span class="lineup-agent-model">nvidia/nemotron-3-super-120b-a12b</span></div>
+        <div class="lineup-agent-row"><span class="lineup-agent-role">Builder 2</span><span class="lineup-agent-model">nvidia/nemotron-3-nano-omni-30b-a3b-reasoning</span></div>
+        <div class="lineup-agent-row"><span class="lineup-agent-role">Code Rev</span><span class="lineup-agent-model">google/gemma-4-31b-it:free</span></div>
+        <div class="lineup-agent-row"><span class="lineup-agent-role">Product Rev</span><span class="lineup-agent-model">nousresearch/hermes-3-405b-instruct:free</span></div>
+        <div class="lineup-agent-row"><span class="lineup-agent-role">Ranker 1</span><span class="lineup-agent-model">openai/gpt-oss-120b:free</span></div>
+      </div>
+      <button class="lineup-apply-btn" onclick="event.stopPropagation();applyLineup(this.closest('.lineup-card').id.replace('lineup-',''))">⚡ Apply Lineup</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- LEGACY -->
+<div class="card" style="border-color:rgba(245,158,11,0.15)">
+  <div class="card-header">
+    <div class="icon" style="background:linear-gradient(135deg,#f59e0b,#d97706);box-shadow:0 4px 15px rgba(245,158,11,0.3)">📜</div>
+    <h2 style="color:#fbbf24">Legacy Compatibility</h2>
+  </div>
+  <p style="color:var(--text-muted);margin-bottom:1rem;font-size:0.85rem">Old field names are still accepted via API and map to these primary agents:</p>
+  <div class="legacy-grid">
+    <div class="legacy-item"><code>builder_model</code><div>→ Responsible Builder</div></div>
+    <div class="legacy-item"><code>reviewer_model</code><div>→ Code Quality Reviewer</div></div>
+    <div class="legacy-item"><code>ranker_model</code><div>→ Primary Ranker</div></div>
+    <div class="legacy-item"><code>fallback_ranker</code><div>→ Fallback Ranker</div></div>
+  </div>
+</div>
+
+<!-- SAVE BAR -->
+<div class="save-bar">
+  <button class="btn btn-secondary" onclick="testAll()">🧪 Test All Connections</button>
+  <button class="btn btn-primary" onclick="saveConfig()">💾 Save All Agent Configurations</button>
+</div>
+
+</div>
+<div id="saveStatus" class="save-status"></div>
+
+<script>
+// ===== MODEL LISTS =====
+const MODELS = {
+  openrouter: [
+    {id:'nvidia/nemotron-3-super-120b-a12b:free', label:'nemotron-3-super-120b', tag:'FREE'},
+    {id:'openai/gpt-oss-120b:free', label:'gpt-oss-120b', tag:'FREE'},
+    {id:'qwen/qwen3-next-80b-a3b-instruct:free', label:'qwen3-80b-instruct', tag:'FREE'},
+    {id:'z-ai/glm-4.5-air:free', label:'glm-4.5-air', tag:'FREE'},
+    {id:'minimax/minimax-m2.5:free', label:'minimax-m2.5', tag:'FREE'},
+    {id:'google/gemma-4-31b-it:free', label:'gemma-4-31b', tag:'FREE'},
+    {id:'google/gemma-4-26b-a4b-it:free', label:'gemma-4-26b', tag:'FREE'},
+    {id:'arcee-ai/trinity-large-thinking:free', label:'trinity-large-thinking', tag:'FREE'},
+    {id:'openai/gpt-oss-20b:free', label:'gpt-oss-20b', tag:'FREE'},
+    {id:'baidu/cobuddy:free', label:'cobuddy', tag:'FREE'},
+    {id:'deepseek/deepseek-v4-flash:free', label:'deepseek-v4-flash', tag:'FREE'},
+    {id:'poolside/laguna-m.1:free', label:'laguna-m.1', tag:'FREE'},
+    {id:'poolside/laguna-xs.2:free', label:'laguna-xs.2', tag:'FREE'},
+    {id:'nvidia/nemotron-3-nano-30b-a3b:free', label:'nemotron-nano-30b', tag:'FREE'},
+    {id:'nvidia/nemotron-nano-9b-v2:free', label:'nemotron-nano-9b', tag:'FREE'},
+    {id:'nvidia/nemotron-nano-12b-v2-vl:free', label:'nemotron-nano-12b-vl', tag:'FREE'},
+    {id:'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free', label:'nemotron-nano-omni-30b', tag:'FREE'},
+    {id:'nvidia/llama-nemotron-embed-vl-1b-v2:free', label:'nemotron-embed-vl-1b', tag:'FREE'},
+    {id:'meta-llama/llama-3.3-70b-instruct:free', label:'llama-3.3-70b', tag:'FREE'},
+    {id:'meta-llama/llama-3.2-3b-instruct:free', label:'llama-3.2-3b', tag:'FREE'},
+    {id:'nousresearch/hermes-3-405b-instruct:free', label:'hermes-3-405b', tag:'FREE'},
+    {id:'alfredpros/codellama-7b-instruct-solidity:free', label:'codellama-7b-solidity', tag:'FREE'},
+  ],
+  nvidia: [
+    {id:'nvidia/nemotron-3-super-120b-a12b', label:'nemotron-3-super-120b'},
+    {id:'nvidia/nemotron-3-nano-30b-a3b', label:'nemotron-nano-30b'},
+    {id:'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning', label:'nemotron-nano-omni-30b'},
+    {id:'nvidia/nemotron-nano-9b-v2', label:'nemotron-nano-9b'},
+    {id:'nvidia/nemotron-nano-12b-2-vl', label:'nemotron-nano-12b-vl'},
+    {id:'deepseek/deepseek-v4', label:'deepseek-v4'},
+    {id:'deepseek/deepseek-v4-flash', label:'deepseek-v4-flash'},
+    {id:'qwen/qwen3-coder', label:'qwen3-coder'},
+    {id:'thudm/glm-5.1', label:'glm-5.1'},
+    {id:'openai/gpt-oss-120b', label:'gpt-oss-120b'},
+    {id:'minimax/minimax-m2.7', label:'minimax-m2.7'},
+  ],
+  ollama: [
+    {id:'llama3.3', label:'llama3.3'},
+    {id:'llama3.2', label:'llama3.2'},
+    {id:'llama3.2:3b', label:'llama3.2:3b'},
+    {id:'qwen3', label:'qwen3'},
+    {id:'deepseek-r1', label:'deepseek-r1'},
+    {id:'mistral', label:'mistral'},
+    {id:'codellama', label:'codellama'},
+    {id:'phi4', label:'phi4'},
+    {id:'gemma3', label:'gemma3'},
+  ],
+  'ollama-cloud': [
+    {id:'llama3.3', label:'llama3.3'},
+    {id:'llama3.2', label:'llama3.2'},
+    {id:'qwen3', label:'qwen3'},
+    {id:'deepseek-r1', label:'deepseek-r1'},
+    {id:'mistral', label:'mistral'},
+    {id:'codellama', label:'codellama'},
+  ]
+};
+
+// ===== LINEUPS =====
+const LINEUPS = {
+  recursive: [
+    {a:'responsible', p:'openrouter', m:'openai/gpt-oss-120b:free'},
+    {a:'creative', p:'openrouter', m:'z-ai/glm-4.5-air:free'},
+    {a:'codequality', p:'openrouter', m:'arcee-ai/trinity-large-thinking:free'},
+    {a:'product', p:'openrouter', m:'google/gemma-4-31b-it:free'},
+    {a:'creativecoder', p:'openrouter', m:'qwen/qwen3-next-80b-a3b-instruct:free'},
+    {a:'factory', p:'openrouter', m:'minimax/minimax-m2.5:free'},
+    {a:'builderreviewer', p:'openrouter', m:'baidu/cobuddy:free'},
+    {a:'primaryranker', p:'openrouter', m:'google/gemma-4-26b-a4b-it:free'},
+    {a:'fallbackranker', p:'openrouter', m:'openai/gpt-oss-20b:free'},
+  ],
+  bestpossible: [
+    {a:'responsible', p:'nvidia', m:'nvidia/nemotron-3-super-120b-a12b'},
+    {a:'creative', p:'nvidia', m:'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning'},
+    {a:'codequality', p:'openrouter', m:'google/gemma-4-31b-it:free'},
+    {a:'product', p:'openrouter', m:'nousresearch/hermes-3-405b-instruct:free'},
+    {a:'creativecoder', p:'openrouter', m:'arcee-ai/trinity-large-thinking:free'},
+    {a:'factory', p:'openrouter', m:'minimax/minimax-m2.5:free'},
+    {a:'builderreviewer', p:'openrouter', m:'openai/gpt-oss-120b:free'},
+    {a:'primaryranker', p:'openrouter', m:'google/gemma-4-26b-a4b-it:free'},
+    {a:'fallbackranker', p:'openrouter', m:'deepseek/deepseek-v4-flash:free'},
+  ]
+};
+
+const AGENTS = ['responsible','creative','codequality','product','creativecoder','factory','builderreviewer','primaryranker','fallbackranker'];
+
+// ===== INIT MODEL LISTS =====
+function getProvider(agent){
+  const sel = document.querySelector(`input[name="${agent}_provider"]:checked`);
+  return sel ? sel.value : 'openrouter';
+}
+
+function renderModels(agent, filterText=''){
+  const prov = getProvider(agent);
+  const models = MODELS[prov] || [];
+  const container = document.getElementById(agent+'_models');
+  const current = document.getElementById(agent+'_model').value;
+  const ft = filterText.toLowerCase();
+
+  const filtered = models.filter(m =>
+    m.id.toLowerCase().includes(ft) || m.label.toLowerCase().includes(ft)
+  );
+
+  container.innerHTML = '';
+  if(filtered.length === 0){
+    container.innerHTML = '<div class="model-option" style="color:var(--text-muted);font-style:italic">No matches — value typed in will be used</div>';
+    return;
+  }
+  filtered.forEach(m => {
+    const div = document.createElement('div');
+    div.className = 'model-option' + (m.id === current ? ' selected' : '');
+    div.innerHTML = `${m.label}${m.tag ? `<span class="model-tag">${m.tag}</span>` : ''}`;
+    div.onclick = () => selectModel(agent, m.id, m.label);
+    container.appendChild(div);
+  });
+}
+
+function selectModel(agent, id, label){
+  document.getElementById(agent+'_model').value = id;
+  document.getElementById(agent+'_search').value = label;
+  renderModels(agent);
+}
+
+function filterModels(agent){
+  const q = document.getElementById(agent+'_search').value;
+  // also store raw typed value as model if not from list
+  document.getElementById(agent+'_model').value = q;
+  renderModels(agent, q);
+}
+
+// ===== PROVIDER CHANGE =====
+function initProviderListeners(){
+  AGENTS.forEach(agent => {
+    const radios = document.querySelectorAll(`input[name="${agent}_provider"]`);
+    radios.forEach(radio => {
+      radio.addEventListener('change', () => {
+        updateBadge(agent);
+        document.getElementById(agent+'_search').value = '';
+        document.getElementById(agent+'_model').value = '';
+        renderModels(agent);
+      });
+    });
+  });
+}
+
+function updateBadge(agent){
+  const prov = getProvider(agent);
+  const badge = document.getElementById('badge-'+agent);
+  const labels = {openrouter:'OpenRouter',nvidia:'NVIDIA',ollama:'Ollama',
+                  'ollama-cloud':'Ollama Cloud'};
+  badge.textContent = labels[prov] || prov;
+  badge.className = 'provider-badge ' + prov;
+}
+
+// ===== APPLY LINEUP =====
+function applyLineup(name){
+  const lineup = LINEUPS[name];
+  if(!lineup) return;
+
+  lineup.forEach(({a, p, m}) => {
+    // set radio
+    const radio = document.querySelector(`input[name="${a}_provider"][value="${p}"]`);
+    if(radio){ radio.checked = true; }
+    updateBadge(a);
+
+    // set model
+    document.getElementById(a+'_model').value = m;
+    // find label
+    const models = MODELS[p] || [];
+    const found = models.find(x => x.id === m);
+    document.getElementById(a+'_search').value = found ? found.label : m;
+    renderModels(a);
+  });
+
+  // highlight active
+  document.querySelectorAll('.lineup-card').forEach(c => c.classList.remove('active-lineup'));
+  document.getElementById('lineup-'+name).classList.add('active-lineup');
+
+  showStatus(true, '✓ '+name.toUpperCase()+' lineup applied');
+}
+
+// ===== TEST AGENT =====
+async function testAgent(agent){
+  const btn = document.getElementById('btn-test-'+agent);
+  const status = document.getElementById('status-'+agent);
+  const result = document.getElementById('test-'+agent);
+
+  btn.classList.add('testing');
+  status.className = 'agent-status testing';
+  result.className = 'test-result';
+  result.style.display = 'none';
+
+  const prov = getProvider(agent);
+  const model = document.getElementById(agent+'_model').value;
+
+  try{
+    const r = await fetch('/api/config/test',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({provider:prov, model, agent})
+    });
+    const d = await r.json();
+    result.textContent = (d.success ? '✅ ' : '❌ ') + d.message;
+    result.className = 'test-result show ' + (d.success ? 'success' : d.warn ? 'warn' : 'error');
+    status.className = 'agent-status ' + (d.success ? 'online' : 'offline');
+  }catch(e){
+    result.textContent = '❌ ' + e.message;
+    result.className = 'test-result show error';
+    status.className = 'agent-status offline';
+  }
+  btn.classList.remove('testing');
+}
+
+async function testAll(){
+  for(const agent of AGENTS){
+    await testAgent(agent);
+    await new Promise(r => setTimeout(r, 300));
+  }
+}
+
+// ===== LOAD CONFIG =====
+async function loadConfig(){
+  if(window.location.protocol === 'file:') return;
+  try{
+    const r = await fetch('/api/config');
+    const c = await r.json();
+
+    document.getElementById('nvidia_key').value = c.nvidia_api_key || '';
+    document.getElementById('openrouter_key').value = c.openrouter_api_key || '';
+    document.getElementById('ollama_host').value = c.ollama_host || 'http://localhost:11434';
+    document.getElementById('ollama_cloud_host').value = c.ollama_cloud_host || '';
+
+    // load each agent
+    AGENTS.forEach(agent => {
+      const prov = c[agent+'_provider'] || 'openrouter';
+      const model = c[agent+'_model'] || '';
+      const radio = document.querySelector(`input[name="${agent}_provider"][value="${prov}"]`);
+      if(radio){ radio.checked = true; }
+      updateBadge(agent);
+      document.getElementById(agent+'_model').value = model;
+      const models = MODELS[prov] || [];
+      const found = models.find(x => x.id === model);
+      document.getElementById(agent+'_search').value = found ? found.label : model;
+      renderModels(agent);
+    });
+
+    // extra fields
+    if(c.novelty_model) document.getElementById('novelty_model').value = c.novelty_model;
+    if(c.minimax_model) document.getElementById('minimax_model').value = c.minimax_model;
+
+  }catch(e){
+    console.warn('Could not load config:', e.message);
+  }
+}
+
+// ===== SAVE CONFIG =====
+async function saveConfig(){
+  const payload = {
+    nvidia_api_key: document.getElementById('nvidia_key').value,
+    openrouter_api_key: document.getElementById('openrouter_key').value,
+    ollama_host: document.getElementById('ollama_host').value,
+    ollama_cloud_host: document.getElementById('ollama_cloud_host').value,
+    novelty_model: document.getElementById('novelty_model').value,
+    minimax_model: document.getElementById('minimax_model').value,
+  };
+  AGENTS.forEach(agent => {
+    payload[agent+'_provider'] = getProvider(agent);
+    payload[agent+'_model'] = document.getElementById(agent+'_model').value;
+  });
+  try{
+    const r = await fetch('/api/config',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    const d = await r.json();
+    showStatus(d.success !== false, d.message || (d.success !== false ? '✓ Configuration saved' : '✗ Save failed'));
+  }catch(e){
+    showStatus(false, '✗ ' + e.message);
+  }
+}
+
+// ===== SHOW STATUS =====
+function showStatus(success, msg){
+  const el = document.getElementById('saveStatus');
+  el.textContent = msg;
+  el.className = 'save-status show ' + (success ? 'success' : 'error');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.className = 'save-status ' + (success ? 'success' : 'error'); }, 3500);
+}
+
+// ===== TOGGLE EXPAND =====
+function toggleExpand(btn, id){
+  const content = document.getElementById(id);
+  const isOpen = content.classList.contains('open');
+  content.classList.toggle('open', !isOpen);
+  btn.classList.toggle('expanded', !isOpen);
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  // render model lists for all agents using their default provider
+  AGENTS.forEach(agent => renderModels(agent));
+  // wire up provider pill changes
+  initProviderListeners();
+  // try to load saved config from server
+  loadConfig();
+});
+</script>
+
+<script>
+// ===== Helpers: multi-key UI =====
+function addKeyRow(bucket, paid=false, value=""){
+  const containerId = bucket === 'openrouter_paid' ? 'openrouter_keys_list_paid' : bucket + '_keys_list';
+  let container = document.getElementById(containerId);
+  if(!container){
+    container = document.createElement('div');
+    container.id = containerId;
+    const parent = document.getElementById('openrouter_keys_group') || document.body;
+    parent.appendChild(container);
+  }
+  const row = document.createElement('div');
+  row.style.display='flex';row.style.gap='0.5rem';row.style.marginBottom='0.5rem';
+  const inp = document.createElement('input');
+  inp.type='password'; inp.placeholder = (paid? 'paid key (hidden)': 'api key (hidden)'); inp.value = value; inp.style.flex='1';
+  const btn = document.createElement('button'); btn.className='btn btn-secondary'; btn.textContent='Remove';
+  btn.onclick = ()=>{container.removeChild(row)};
+  row.appendChild(inp); row.appendChild(btn);
+  container.appendChild(row);
+}
+
+function gatherKeys(){
+  const out = {nvidia:[], openrouter:[], openrouter_paid:[]};
+  function collect(id, bucket){
+    const cont = document.getElementById(id);
+    if(!cont) return;
+    for(const div of Array.from(cont.children)){
+      const inp = div.querySelector('input');
+      if(inp && inp.value){ out[bucket].push(inp.value.trim()) }
+    }
+  }
+  collect('nvidia_keys_list','nvidia');
+  collect('openrouter_keys_list','openrouter');
+  collect('openrouter_keys_list_paid','openrouter_paid');
+  return out;
+}
+
+async function loadConfig(){
+  try{
+    const res = await fetch('/api/config');
+    const cfg = await res.json();
+    // populate model inputs if available
+    const map = {responsible_model_input:'responsible_model', creative_model_input:'creative_model'};
+    Object.entries(map).forEach(([id,key])=>{
+      const el = document.getElementById(id); if(!el) return;
+      if(cfg[key]) el.value = cfg[key];
+      // load history from localStorage
+      const hist = JSON.parse(localStorage.getItem('model_history_'+id)||'[]');
+      renderModelHistory(id,hist);
+    });
+    // populate api keys lists (keys are masked; leave inputs empty for security)
+    const keys = cfg.api_keys || {};
+    const nlist = document.getElementById('nvidia_keys_list'); nlist.innerHTML='';
+    (keys.nvidia||[]).forEach(k=>addKeyRow('nvidia',false,''));
+    const olist = document.getElementById('openrouter_keys_list'); olist.innerHTML='';
+    (keys.openrouter||[]).forEach(k=>addKeyRow('openrouter',false,''));
+    // paid keys
+    // ensure container for paid keys exists
+    if(!document.getElementById('openrouter_keys_list_paid')){
+      const paidContainer = document.createElement('div'); paidContainer.id='openrouter_keys_list_paid';
+      document.getElementById('openrouter_keys_group').appendChild(paidContainer);
+    }
+    (keys.openrouter_paid||[]).forEach(k=>addKeyRow('openrouter_paid',true,''));
+  }catch(e){console.warn('Failed to load config',e)}
+}
+
+function renderModelHistory(inputId, list){
+  const el = document.getElementById(inputId);
+  if(!el) return;
+  // attach simple context menu on focus
+  el.addEventListener('focus', ()=>{
+    const menuId = inputId+'_history';
+    let menu = document.getElementById(menuId);
+    if(menu) menu.remove();
+    menu = document.createElement('div'); menu.id=menuId; menu.className='model-options';
+    menu.style.position='absolute'; menu.style.zIndex=9999; menu.style.width=el.offsetWidth+'px';
+    list.slice(0,10).forEach(v=>{
+      const opt = document.createElement('div'); opt.className='model-option'; opt.textContent=v; opt.onclick=()=>{el.value=v; menu.remove();};
+      menu.appendChild(opt);
+    });
+    el.parentNode.appendChild(menu);
+    el.addEventListener('blur', ()=>{ setTimeout(()=>{ menu.remove() },150) }, {once:true});
+  });
+  // on blur save to localStorage history
+  el.addEventListener('change', ()=>{
+    const val = el.value && el.value.trim(); if(!val) return;
+    const key = 'model_history_'+inputId; const hist = JSON.parse(localStorage.getItem(key)||'[]');
+    // dedupe and push to front
+    const idx = hist.indexOf(val); if(idx!==-1) hist.splice(idx,1);
+    hist.unshift(val); if(hist.length>10) hist.length=10;
+    localStorage.setItem(key, JSON.stringify(hist));
+  });
+}
+
+async function saveConfig(){
+  const payload = {};
+  // basic model fields
+  payload.responsible_model = document.getElementById('responsible_model_input')?.value || '';
+  payload.creative_model = document.getElementById('creative_model_input')?.value || '';
+  // gather keys
+  const keys = gatherKeys();
+  payload.api_keys = keys;
+  try{
+    const res = await fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data = await res.json();
+    showSaveStatus(true, data.message||'Saved')
+  }catch(e){showSaveStatus(false,'Save failed')}
+}
+
+function showSaveStatus(ok,msg){ const el=document.getElementById('saveStatus'); el.className='save-status show '+(ok?'success':'error'); el.textContent=msg; setTimeout(()=>{el.className='save-status';},2500)}
+
+function testAll(){ alert('Tests will run using configured keys when implemented.'); }
+
+// load on start
+loadConfig();
+</script>
+</body>
+</html>

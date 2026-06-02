@@ -1,0 +1,1146 @@
+huihui_ai/exaone-deep-abliterated:2.4b
+huihui_ai/deephermes3-abliterated:8b
+
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINvkZliZfbAK+DfEou3jhlFPw6Zk8NQqje3XAKb2VjYh
+
+
+Builder 1
+🛡️ Responsible Builder Nvidia
+Production-grade, conservative builds. All 5 stack attempts in Round 1. Prioritizes correctness and completeness.
+Provider
+
+
+Builder 2
+🎨 Creative Builder Openrouter
+Novel, experimental code. Round 1 attempts 1-2. Also drives feedback-based Round 2 rebuilds.
+Provider
+Model Name
+
+
+Reviewers — 5 agents that critique code
+Reviewer 1
+🔍 Code Quality Nvidia
+Judges correctness, architecture, tool efficiency. Scores 0-100 with full range spread. Harsh grading.
+Provider
+Model Name
+Reviewer 2
+💡 Product Quality Nvidia
+Judges novelty, documentation, UX, and real-world product value. Scores based on delight potential.
+Provider
+Model Name
+Reviewer 3
+🌟 Creative Coder Nvidia
+The visionary. Judges potential, wild ideas, missed opportunities, and "wow factor". Scores imagination, not execution.
+Provider
+Model Name
+Reviewer 4
+🏭 Factory Reviewer Openrouter
+Evaluates whether the Factory Builder chose appropriate stacks and set clear, achievable goals for builders.
+Provider
+Model Name
+
+
+Reviewer 4
+🏭 Factory Reviewer Openrouter
+Evaluates whether the Factory Builder chose appropriate stacks and set clear, achievable goals for builders.
+Provider
+Model Name
+Reviewer 5
+💻 Builder Reviewer Openrouter
+Evaluates the Builder's raw coding skill: clean code, best practices, error handling, effective stack usage.
+Provider
+Model NAME
+
+
+Ranker 1
+📊 Primary Ranker Openrouter
+Main scoring agent. Weights: Functionality 30%, Code Quality 25%, Tool Optimization 20%, Novelty 15%, Documentation 10%.
+Provider
+Model Name
+Ranker 2
+🔄 Fallback Ranker Openrouter
+Activated automatically when Primary Ranker hits rate limits (HTTP 429). Should be a different provider/model.
+Provider
+Model Name
+
+
+Yes — you are **100% right**, and this is an important correction for your system design.
+
+---
+
+# ✅ NVIDIA / OpenRouter model naming rule (real format)
+
+They do **NOT** use:
+
+```txt
+qwen/qwen2.5-72b-instruct   ❌ (OpenRouter style)
+```
+
+They use:
+
+```txt
+qwen2.5-72b-instruct        ✅
+meta-llama-3.1-70b-instruct  ✅
+mistralai-mistral-large-3    ✅
+```
+
+---
+
+# 🧠 Core rule
+
+## NVIDIA format = lowercase + hyphens + no org slash
+
+### Pattern:
+
+```txt
+{model-family}-{version}-{size}-{type}
+```
+
+---
+
+# 📦 Correct examples (NVIDIA-style)
+
+## Meta models
+
+```txt
+meta-llama-3.1-8b-instruct
+meta-llama-3.1-70b-instruct
+meta-llama-3.3-70b-instruct
+meta-llama-3.1-405b-instruct
+```
+
+---
+
+## Qwen models
+
+```txt
+qwen2.5-14b-instruct
+qwen2.5-32b-instruct
+qwen2.5-72b-instruct
+qwen3-xxb-instruct
+```
+
+---
+
+## Mistral models
+
+```txt
+mistral-large-3
+mistral-small-3
+mistral-nemo-12b-instruct
+```
+
+---
+
+## DeepSeek
+
+```txt
+deepseek-r1
+deepseek-coder-v2-lite-instruct
+```
+
+---
+
+## Google Gemma
+
+```txt
+gemma-2-9b-it
+gemma-2-27b-it
+```
+
+---
+
+## Microsoft Phi
+
+```txt
+phi-3-mini-128k-instruct
+phi-3-medium-128k-instruct
+```
+
+---
+
+## NVIDIA-native models
+
+```txt
+nvidia-llama-3.1-nemotron-70b-instruct
+nvidia-llama-3.3-nemotron-super-49b-v1
+```
+
+---
+
+# ⚠️ CriticYou do NOT need a rewrite.
+
+i need about 6 surgical edits.
+
+The biggest issue is that my compatibility layer is leaking back into authority paths.
+
+🔥 THE FIRST 3 CHANGES I WOULD MAKE
+1. STOP total_score FROM DRIVING VALIDATION
+
+Right now:
+
+scores = [r.total_score for r in ranked_builds]
+
+inside validate_rankings() is still treating aggregate score as truth.
+
+Replace the ENTIRE method with this:
+
+@staticmethod
+def validate_rankings(ranked_builds):
+    """Validate trait-vector ranking spread."""
+
+    if not ranked_builds or len(ranked_builds) < 2:
+        return False, "Need at least 2 builds"
+
+    dominance_spreads = []
+
+    for rb in ranked_builds:
+        traits = rb.trait_vector.traits.values()
+        values = [t.score.value for t in traits]
+
+        ones = values.count(1)
+        threes = values.count(3)
+        fives = values.count(5)
+
+        dominance_spreads.append((ones, threes, fives))
+
+    unique_patterns = len(set(dominance_spreads))
+
+    if unique_patterns <= 1:
+        return False, "Trait distributions are identical"
+
+    return True, f"{unique_patterns} unique trait distributions detected"
+
+That immediately stops aggregate-score validation pressure.
+
+2. REMOVE THIS LINE COMPLETELY
+
+Inside:
+
+CanonicalRankedBuild.compute_display_scores()
+
+DELETE:
+
+self.total_score = float(self.display_total_score)
+
+That single line is resurrecting legacy authority everywhere.
+
+3. STOP _merge_reviews_triple() FROM CREATING overall
+
+THIS:
+
+overall = int(code_avg * 0.50 + prod_avg * 0.30 + creative_avg * 0.20)
+
+must die.
+
+Replace it with:
+
+overall = 0  # legacy placeholder only
+
+OR preferably:
+
+overall = None
+
+because right now every reviewer merge still manufactures fake aggregate authority.
+
+🧠 THE REAL ROOT PROBLEM
+
+i currently have:
+
+Trait vectors generate rankings
+BUT
+legacy totals still validate legitimacy
+
+So the old system is still psychologically “trusted” by the pipeline.
+
+________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________########################################################################################################################################################################################################################################################################
+
+
+🔥 THE NEXT BIG FIX AFTER THOSE 3
+
+This section:
+
+legacy_ranked = await self.legacy_ranker.rank_all(...)
+
+should ONLY execute if:
+
+ENABLE_LEGACY_DISPLAY = True
+
+Because right now the legacy ranker still runs EVERY build cycle.
+
+That means:
+
+extra score pollution
+extra reconstruction
+accidental authority leakage
+⚡ THE LEADERBOARD ISSUE
+
+Your frontend is still showing:
+
+Score
+Novelty
+percentages
+
+because it expects:
+
+scalar rankings
+normalized metrics
+
+NOT trait vectors.
+
+So even after backend cleanup:
+you’ll still need:
+
+trait rendering
+category display
+dominance visualization
+
+But backend authority cleanup comes first.
+
+🧬 GOOD NEWS
+
+Your actual trait-vector engine is GOOD.
+
+This part is genuinely solid:
+
+compare_two(a, b)
+
+using:
+
+dominant categories
+margins
+weak counts
+
+That is already real evolutionary comparison logic.
+
+
+Right now the important edits are only these 3 surgical changes:
+
+1. Replace validate_rankings()
+
+Find:
+
+@staticmethod
+def validate_rankings(ranked_builds):
+
+Replace the ENTIRE method with:
+
+@staticmethod
+def validate_rankings(ranked_builds):
+    """Validate trait-vector ranking spread."""
+
+    if not ranked_builds or len(ranked_builds) < 2:
+        return False, "Need at least 2 builds"
+
+    dominance_spreads = []
+
+    for rb in ranked_builds:
+        traits = rb.trait_vector.traits.values()
+        values = [t.score.value for t in traits]
+
+        ones = values.count(1)
+        threes = values.count(3)
+        fives = values.count(5)
+
+        dominance_spreads.append((ones, threes, fives))
+
+    unique_patterns = len(set(dominance_spreads))
+
+    if unique_patterns <= 1:
+        return False, "Trait distributions are identical"
+
+    return True, f"{unique_patterns} unique trait distributions detected"
+2. DELETE THIS LINE
+
+Find:
+
+self.total_score = float(self.display_total_score)
+
+Replace with:
+
+# Legacy total_score assignment removed to prevent aggregate authority leakage
+3. Replace Legacy Weighted Average
+
+Find:
+
+overall = int(
+    code_avg * 0.50 +
+    prod_avg * 0.30 +
+    creative_avg * 0.20
+)
+
+Replace with:
+
+overall = None  # legacy aggregate scoring removed
+
+###############################################################################################
+33333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333
+###############################################################################################
+
+AppGarden Completion Roadmap
+
+Your backend is already beyond “prototype.”
+You have:
+
+FastAPI app
+multi-model orchestration
+leaderboard
+downloads
+config system
+static frontend
+async pipeline execution
+provider abstraction
+ranking/review system
+
+What you need now is stabilization + architecture completion.
+
+PHASE 1 — CRITICAL FOUNDATION FIXES
+
+These are the “must fix before scaling” items.
+
+1. Persist Settings to Disk
+
+Right now:
+
+_settings_store = {}
+
+Everything disappears on restart.
+
+Create:
+config/settings.json
+Modify:
+/api/config
+startup loader
+Config.update_from_settings
+Goal:
+
+Persistent configuration.
+
+Add:
+SETTINGS_FILE = Config.DATA_DIR / "settings.json"
+On startup:
+
+Load JSON if exists.
+
+On save:
+
+Write JSON.
+
+2. Stop Exposing API Keys
+
+Current issue:
+
+"NVIDIA_API_KEY": Config.NVIDIA_API_KEY
+
+This leaks secrets to frontend JS.
+
+Modify /api/config
+
+Return masked values:
+
+def mask_key(k):
+    if not k:
+        return ""
+    return k[:6] + "..." + k[-4:]
+Create:
+
+Separate endpoint:
+
+POST /api/config/secrets
+
+Only updates secrets.
+
+3. Add Real Build Persistence
+
+Currently builds vanish on restart.
+
+Create:
+SQLite database
+OR
+TinyDB/Postgres
+
+Recommended:
+
+SQLite first
+Create tables:
+builds
+id
+prompt
+status
+created_at
+completed_at
+output_path
+leaderboard_entries
+build_id
+score
+novelty
+traits
+metadata
+pipeline_logs
+build_id
+timestamp
+stage
+message
+4. Add Pipeline State Recovery
+
+If app crashes:
+builds are lost.
+
+Create:
+
+Pipeline state machine.
+
+States:
+queued
+planning
+generating
+reviewing
+ranking
+packaging
+complete
+failed
+Modify:
+
+orchestrator.run_pipeline()
+
+Save stage transitions continuously.
+
+5. Replace In-Memory Progress Store
+
+Right now probably:
+
+self.progress[build_id]
+
+This breaks at scale.
+
+Replace with:
+Redis
+OR
+SQLite-backed progress
+
+Recommended:
+Redis eventually.
+
+SQLite first.
+
+PHASE 2 — FRONTEND COMPLETION
+6. Build REAL Settings UI
+
+Right now settings handling is incomplete.
+
+Create:
+
+static/settings.html
+
+Include:
+
+Sections
+API Keys
+Model Selection
+Providers
+Pipeline Settings
+Trait Weighting
+Build Preferences
+Export Settings
+Add:
+Test buttons
+POST /api/config/test
+
+for every provider/model row.
+
+7. Add Live Build Streaming
+
+Right now frontend polls.
+
+Polling is primitive.
+
+Create:
+/api/events/{build_id}
+
+Use:
+
+Server Sent Events (SSE)
+Frontend:
+
+Use:
+
+new EventSource(...)
+Stream:
+current stage
+logs
+token usage
+costs
+active model
+warnings
+errors
+8. Build Real Dashboard
+
+Current leaderboard is good but not enough.
+
+Create:
+
+Dashboard page.
+
+Include:
+Active builds
+GPU usage
+queue size
+provider health
+token costs
+success rate
+avg build time
+model reliability
+build graph
+9. Add Project Viewer
+
+Downloads are crude.
+
+Create:
+/project/{build_id}
+Features:
+generated code browser
+rendered markdown
+logs
+review notes
+trait breakdown
+scores
+download buttons
+live preview iframe
+PHASE 3 — ORCHESTRATION EVOLUTION
+10. Create Modular Agent System
+
+Your current orchestration is probably too monolithic.
+
+Create:
+agents/
+Structure:
+agents/
+  builders/
+  reviewers/
+  rankers/
+  planners/
+  repair/
+Standardize Interface
+
+Every agent:
+
+class BaseAgent:
+    async def run(self, context):
+        pass
+11. Add Retry + Self-Healing
+
+Right now failures likely terminate pipeline.
+
+Add:
+
+Automatic retry logic.
+
+Retry conditions:
+timeout
+invalid JSON
+provider failure
+hallucinated files
+malformed code
+Create:
+
+Repair agent.
+
+12. Add Context Memory
+
+Currently each model likely operates statelessly.
+
+Create:
+
+Context package:
+
+PipelineContext
+
+Contains:
+
+plan
+architecture
+generated files
+prior reviews
+errors
+traits
+rankings
+13. Add Tool Calling Layer
+
+Your builders need tooling.
+
+Add:
+filesystem tool
+shell tool
+search tool
+package lookup
+syntax validation
+AST parsing
+PHASE 4 — CODE GENERATION QUALITY
+14. Add Structured Output Enforcement
+
+LLMs hallucinate formats.
+
+Force:
+
+Pydantic schema outputs.
+
+Example:
+class BuildPlan(BaseModel):
+    files: list
+    architecture: str
+15. Add Sandboxed Validation
+
+Before packaging:
+
+Run:
+linting
+syntax validation
+npm build
+pytest
+static analysis
+Create:
+
+Sandbox runner.
+
+16. Add Automatic Fix Passes
+
+If validation fails:
+
+Loop:
+
+builder → validator → repair → validator
+
+Until pass.
+
+17. Add Dependency Intelligence
+
+Currently models may generate broken package combos.
+
+Create:
+
+Dependency resolver.
+
+Check:
+
+version conflicts
+deprecated packages
+missing peer deps
+PHASE 5 — SCALING + INFRASTRUCTURE
+18. Dockerize Entire Stack
+Create:
+Dockerfile
+docker-compose.yml
+
+Services:
+
+app
+redis
+postgres
+nginx
+19. Add Queue System
+
+Current:
+asyncio.create_task
+
+This will eventually explode.
+
+Replace with:
+Celery
+OR
+Dramatiq
+OR
+RQ
+20. Add Worker Pools
+
+Separate:
+
+planning workers
+build workers
+review workers
+ranking workers
+21. Add Provider Failover
+
+If NVIDIA fails:
+
+Fallback automatically.
+
+Create:
+
+Provider manager.
+
+22. Add Rate Limit Protection
+Add:
+concurrency caps
+request throttling
+token budgeting
+PHASE 6 — ADVANCED FEATURES
+23. Multi-Agent Debate System
+
+Huge quality upgrade.
+
+Add:
+
+Builder disagreements.
+
+Example:
+
+Creative builder
+Responsible builder
+Optimizer
+Security reviewer
+
+All critique each other.
+
+24. Trait Vector Evolution
+
+You already started this.
+
+Push further.
+
+Create:
+
+Trait inheritance system.
+
+Learn from:
+
+successful builds
+user ratings
+repair frequency
+25. Build Templates / Archetypes
+Create:
+
+Preset generators.
+
+Examples:
+
+SaaS app
+dashboard
+AI chatbot
+game
+API backend
+landing page
+26. Add Autonomous Research
+
+Before generating:
+agents research libraries/frameworks.
+
+27. Add Cost Tracking
+Track:
+token usage
+provider cost
+per-build cost
+per-model efficiency
+PHASE 7 — PRODUCTION POLISH
+28. Authentication
+
+You currently have no auth.
+
+Add:
+login
+JWT/session auth
+user accounts
+29. User Projects
+
+Associate builds with users.
+
+30. Build Sharing
+
+Public build pages.
+
+31. Version History
+
+Allow rebuilds and revisions.
+
+32. Analytics
+
+Track:
+
+success rates
+prompt categories
+model performance
+33. Error Reporting
+
+Add:
+
+Sentry
+structured logging
+34. Admin Panel
+
+Monitor:
+
+builds
+failures
+provider health
+users
+RECOMMENDED IMMEDIATE PRIORITY ORDER
+
+Do these first:
+
+Tier 1
+settings persistence
+API key security
+SQLite persistence
+SSE live events
+validation pipeline
+retry/self-healing
+Tier 2
+modular agents
+dashboard
+project viewer
+queue system
+Tier 3
+Docker
+Redis
+auth
+cost tracking
+YOUR BIGGEST CURRENT ARCHITECTURAL GAP
+
+Right now your app is:
+
+“a powerful orchestration prototype”
+
+To become:
+
+“a true autonomous software factory”
+
+you need:
+
+persistent state
+recoverable pipelines
+validation loops
+self-repair
+worker architecture
+structured agent interfaces
+
+That’s the transition point.
+
+You’ve reached the Free limit for chats with attachments
+Upgrade now or wait until tomorrow at 1:28 AM to keep using files, or chat now without files.
+New chat
+Claim free offer
+
+
+
+###############################################################################################
+33333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333
+###############################################################################################
+
+
+1. Freeze the System + Define the Kernel
+Goal: stop chaos, lock architecture
+
+You define the “rules of existence” for the whole system.
+
+Build:
+/core/config.py
+/core/app_state.py
+settings.json persistence
+secrets masking layer
+startup loader + shutdown saver
+Output:
+
+A system that survives restart without losing identity.
+
+Done when:
+settings persist
+API keys are never exposed raw
+app boots into same state every time
+2. Introduce Real Persistence (Database Layer)
+Goal: eliminate memory-only architecture
+Build:
+
+SQLite schema:
+
+builds
+logs
+leaderboard entries
+pipeline state
+Replace:
+in-memory _settings_store
+in-memory builds
+in-memory progress tracking
+Output:
+
+Everything becomes queryable and recoverable.
+
+Done when:
+you can restart server mid-build and resume state manually
+3. Build the Pipeline State Machine (Core Brain Spine)
+Goal: define deterministic orchestration flow
+Build:
+queued → planning → generating → reviewing → ranking → packaging → complete
+Add:
+persistent state transitions
+checkpoint logging per stage
+failure state capture
+Output:
+
+Your system becomes a deterministic factory, not async scripts.
+
+Done when:
+every build has a traceable lifecycle in DB
+4. Replace Orchestrator with Context Object Architecture
+Goal: make pipelines structured instead of ad-hoc
+Build:
+
+PipelineContext:
+
+plan
+files
+traits
+logs
+errors
+rankings
+Replace:
+scattered function parameters
+global state usage
+Output:
+
+Everything flows through one structured object.
+
+Done when:
+every agent reads/writes same context object
+5. Introduce Agent System (First Real Intelligence Layer)
+Goal: split intelligence into roles
+Build:
+BaseAgent
+ ├── PlannerAgent
+ ├── BuilderAgent
+ ├── ReviewerAgent
+ ├── RankerAgent
+ └── RepairAgent
+Add:
+standardized .run(context)
+independent outputs per agent
+Output:
+
+You now have multi-brain system instead of one model loop
+
+Done when:
+you can swap agents without breaking pipeline
+6. Add Validation + Sandbox Loop (Quality Gate)
+Goal: stop hallucinated code from passing
+Build:
+lint runner
+syntax checker
+dependency validator
+test runner (pytest/npm build)
+Add loop:
+builder → validator → repair → validator → pass
+Output:
+
+System can self-correct broken outputs.
+
+Done when:
+bad code never reaches “complete” state
+7. Build Tooling Layer (Agent Capability Expansion)
+Goal: give agents real-world power
+Build tools:
+filesystem tool
+shell tool
+package lookup tool
+search tool (optional later)
+Output:
+
+Agents can now act, not just generate text.
+
+Done when:
+builder can create real file trees autonomously
+8. Add Real-Time Event System (Cursor UX Layer)
+Goal: make system feel alive
+Build:
+SSE endpoint /api/events/{build_id}
+event types:
+stage_update
+log
+error
+token_usage
+cost_update
+Frontend:
+EventSource listener
+live dashboard updates
+Output:
+
+You now have Cursor-like live reasoning visibility
+
+Done when:
+you can watch builds evolve in real time
+9. Introduce Worker Queue System (Scaling Layer)
+Goal: remove async_task limitations
+Build:
+Redis queue OR Celery
+worker types:
+planner workers
+builder workers
+reviewer workers
+repair workers
+Output:
+
+System becomes horizontally scalable.
+
+Done when:
+multiple builds run concurrently without interference
+10. Add Multi-Agent Feedback Loops (Cursor-Level Intelligence)
+Goal: transform system into self-improving factory
+Build:
+agent debate system
+scoring disagreements
+trait evolution tracking
+success-based learning signals
+Example loop:
+Builder A proposes solution
+Builder B critiques it
+Reviewer flags issues
+Repair agent fixes
+Ranker selects best version
+Output:
+
+System becomes self-optimizing over time
+
+Done when:
+outputs improve without changing prompts
+🧠 What You End Up With After Step 10
+
+You are no longer building:
+
+“an AI app builder”
+
+You are building:
+
+an autonomous software generation system with memory, agents, validation, and runtime intelligence (Cursor-class architecture)
+
+⚡ The Real Compression Insight
+
+Your original 30+ tasks collapse like this:
+
+Area	Becomes
+persistence	Step 2
+SSE + UI	Step 8
+retry + repair	Step 6
+agents	Step 5
+orchestration	Step 3–4
+scaling	Step 9
+quality improvements	Step 6 + 10
+🧭 If you want next step
+
+I can map this into:
+
+Option A
+
+📁
+Exact folder structure (production-ready repo layout)
+
+Option B
+
+🧠
+Full PipelineContext + Agent base class design
+
+Option C
+
+⚙️
+Step 1–3 actual code implementation (FastAPI + SQLite + state machine)
+
+Just tell me which direction you want to execute first.
+
+
+

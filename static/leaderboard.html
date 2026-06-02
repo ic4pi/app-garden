@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leaderboard - The Gardener</title>
+<style>
+:root{--primary:#2d5016;--primary-light:#4a7c2e;--accent:#e8f5e9;--dark:#1a1a2e;--light:#f5f5f0;--border:#c8e6c9;--success:#4caf50;--warning:#ff9800;}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--light);color:var(--dark)}
+.nav{background:white;padding:1rem 2rem;box-shadow:0 2px 10px rgba(0,0,0,0.05)}
+.nav-content{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center}
+.nav-links a{color:var(--primary);text-decoration:none;font-weight:600;margin-left:2rem}
+.container{max-width:1200px;margin:0 auto;padding:2rem}
+.hero{background:linear-gradient(135deg,#2d5016 0%,#4a7c2e 100%);color:white;padding:3rem 2rem;text-align:center;margin-bottom:2rem}
+.hero h1{font-size:2.5rem;margin-bottom:0.5rem}
+.filters{display:flex;gap:1rem;margin-bottom:2rem;flex-wrap:wrap}
+.filters select,.filters button{padding:0.75rem 1rem;border:2px solid var(--border);border-radius:8px;font-size:1rem;background:white;cursor:pointer}
+.filters button{background:var(--primary);color:white;border-color:var(--primary)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.5rem;margin-bottom:2rem}
+.stat-card{background:white;padding:1.5rem;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.05);text-align:center}
+.stat-value{font-size:2.5rem;font-weight:700;color:var(--primary)}
+table{width:100%;background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.05)}
+th,td{padding:1rem;text-align:left;border-bottom:1px solid var(--border)}
+th{background:var(--accent);color:var(--primary);font-weight:600}
+tr:hover{background:rgba(232,245,233,0.5)}
+.badge{display:inline-block;padding:0.25rem 0.75rem;border-radius:20px;font-size:0.85rem;font-weight:600}
+.badge-gold{background:#ffd700;color:#333}
+.badge-silver{background:#c0c0c0;color:#333}
+.badge-bronze{background:#cd7f32;color:white}
+.badge-success{background:rgba(76,175,80,0.2);color:var(--success)}
+</style></head>
+<body>
+<nav class="nav"><div class="nav-content"><div style="font-size:1.5rem;font-weight:700;color:var(--primary)">The Gardener</div><div class="nav-links"><a href="/">Home</a><a href="/leaderboard">Leaderboard</a><a href="/settings">Settings</a><a href="/docs">API Docs</a></div></div></nav>
+<div class="hero"><h1>Build Leaderboard</h1><p>See how our AI agents' creations rank across time</p></div>
+<div class="container">
+<div class="stats-grid" id="statsGrid">
+<div class="stat-card"><div class="stat-value" id="totalEntries">-</div><div>Total Builds</div></div>
+<div class="stat-card"><div class="stat-value" id="avgScore">-</div><div>Average Score</div></div>
+<div class="stat-card"><div class="stat-value" id="highestScore">-</div><div>Highest Score</div></div>
+</div>
+<div class="filters">
+<select id="timeframe"><option value="all_time">All Time</option><option value="current_month">This Month</option><option value="past_year">Past Year</option></select>
+<select id="codeType"><option value="">All Types</option><option value="website">Website</option><option value="web_app">Web App</option><option value="api_backend">API Backend</option><option value="dashboard">Dashboard</option><option value="chatbot">Chatbot</option><option value="game">Game</option></select>
+<select id="sortBy"><option value="score">By Score</option><option value="created_at">By Date</option></select>
+<button onclick="loadLeaderboard()">Refresh</button>
+</div>
+<table><thead><tr><th>Rank</th><th>Project</th><th>Type</th><th>Score</th><th>Novelty</th><th>Stack</th><th>Build Time</th><th>Date</th><th>Download</th></tr></thead>
+<tbody id="leaderboardBody"><tr><td colspan="9" style="text-align:center">Loading...</td></tr></tbody>
+</table></div>
+<script>
+async function loadLeaderboard(){const tf=document.getElementById('timeframe').value,ct=document.getElementById('codeType').value,sb=document.getElementById('sortBy').value;const params=new URLSearchParams({timeframe:tf,sort_by:sb,limit:'50'});if(ct)params.append('code_type',ct);try{const res=await fetch('/api/leaderboard?'+params);const d=await res.json();if(d.stats){document.getElementById('totalEntries').textContent=d.stats.total_entries;document.getElementById('avgScore').textContent=d.stats.average_score;document.getElementById('highestScore').textContent=d.stats.highest_score;}const tb=document.getElementById('leaderboardBody');if(d.entries&&d.entries.length){tb.innerHTML=d.entries.map((e,i)=>`<tr><td>${i===0?'<span class="badge badge-gold">1st</span>':i===1?'<span class="badge badge-silver">2nd</span>':i===2?'<span class="badge badge-bronze">3rd</span>':'#'+(i+1)}</td><td><strong>${e.project_name}</strong></td><td>${e.code_type}</td><td><span class="badge badge-success">${e.score}</span></td><td>${e.novelty_rating}/100</td><td>${e.tool_stack}</td><td>${e.build_time_seconds.toFixed(1)}s</td><td>${new Date(e.created_at).toLocaleDateString()}</td><td>${e.download_path?'<a href="/api/download-file?path='+encodeURIComponent(e.download_path)+'" style="color:var(--primary);text-decoration:none">Download</a>':'-'}</td></tr>`).join('');}else{tb.innerHTML='<tr><td colspan="9" style="text-align:center;padding:2rem">No entries yet. Start building!</td></tr>';}}catch(err){console.error(err);}}
+loadLeaderboard();
+</script></body></html>

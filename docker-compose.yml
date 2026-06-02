@@ -1,0 +1,112 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: uvicorn app:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    environment:
+      USE_CELERY: "true"
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      APP_GARDEN_DATA_DIR: /app/data
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - redis
+
+  worker-planner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A worker.celery_app worker -Q planner -c 2 -n planner@%h --loglevel=info
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      APP_GARDEN_DATA_DIR: /app/data
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - redis
+
+  worker-builder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A worker.celery_app worker -Q builder -c 4 -n builder@%h --loglevel=info
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      APP_GARDEN_DATA_DIR: /app/data
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - redis
+
+  worker-repair:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A worker.celery_app worker -Q repair -c 2 -n repair@%h --loglevel=info
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      APP_GARDEN_DATA_DIR: /app/data
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - redis
+
+  worker-reviewer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A worker.celery_app worker -Q reviewer -c 2 -n reviewer@%h --loglevel=info
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      APP_GARDEN_DATA_DIR: /app/data
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - redis
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A worker.celery_app beat --loglevel=info
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      RECOVERY_INTERVAL_SECONDS: "300"
+      APP_GARDEN_DATA_DIR: /app/data
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - redis
+
+  worker-ranker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A worker.celery_app worker -Q ranker -c 2 -n ranker@%h --loglevel=info
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      APP_GARDEN_DATA_DIR: /app/data
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - redis
+
+volumes:
+  redis_data:
