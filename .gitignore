@@ -1,0 +1,13 @@
+venv/
+__pycache__/
+*.pyc
+.env
+data/settings.json
+data/settings.json.tmp
+outputs/
+data/workspaces/
+*.db
+.env*
+.env.txt
+data/api_keys.json
+.env*
