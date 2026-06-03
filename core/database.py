@@ -1366,4 +1366,5 @@ def get_database() -> AppDatabase:
     global _db
     if _db is None:
         _db = AppDatabase()
+        _db.init_db()
     return _db
