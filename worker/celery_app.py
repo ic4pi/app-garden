@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import warnings
 
 from celery import Celery
 from celery.signals import worker_ready
@@ -16,6 +17,8 @@ from core.pipeline_stages import (
     QUEUE_REPAIR,
     QUEUE_REVIEWER,
 )
+
+warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
 
 broker = Config.CELERY_BROKER_URL
 backend = os.getenv("CELERY_RESULT_BACKEND", Config.CELERY_RESULT_BACKEND)
