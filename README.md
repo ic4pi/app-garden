@@ -95,3 +95,4 @@ See `deploy_configs/` for pre-configured deployment files for 7 platforms:
 - **Railway** — Best developer experience
 
 Quick deploy: pick a platform, copy the config file to root, push to GitHub, connect repo.
+# garden
