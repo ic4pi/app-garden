@@ -265,7 +265,7 @@ class PipelineRunner:
             "status": "failed",
             "error": err,
             "build_id": ctx.build_id,
-            "errors": ctx.errors.entries,
+            "errors": ctx.errors,
             "validation": {
                 "by_attempt": ctx.validation.by_attempt,
                 "final_code_passed": ctx.validation.final_code_passed,

@@ -3130,7 +3130,7 @@ class PipelineOrchestrator:
             },
             "trait_vectors": ctx.traits.vectors,
             "total_time_seconds": time.time() - ctx.start_time,
-            "errors": ctx.errors.entries,
+            "errors": ctx.errors,
             "lifecycle_count": len(ctx.db.get_lifecycle(ctx.build_id)),
             "migration_info": {
                 "version": "2.1_trait_vector",

@@ -896,7 +896,8 @@ class DownloadManager:
 
         package_info = {
             "project_name": project_name, "generated_at": datetime.now().isoformat(),
-            "tool_stack": tool_stack.dict(), "build_request": build_request.dict(),
+            "tool_stack": tool_stack.model_dump() if hasattr(tool_stack, 'model_dump') else tool_stack.dict(),
+            "build_request": build_request.model_dump() if hasattr(build_request, 'model_dump') else build_request.dict(),
             "files": list(files.keys())
         }
         (package_dir / "package.json").write_text(json.dumps(package_info, indent=2), encoding="utf-8")
@@ -1011,8 +1012,8 @@ class PipelineOrchestrator:
     async def run_pipeline(self, request, build_id=None):
         build_id = build_id or f"pipeline_{uuid.uuid4().hex[:8]}"
         self.current_build_id = build_id
-        self.progress[build_id] = {"status": "started", "phase": "meta_builder",
-                                    "message": "The Gardener is selecting seeds...", "percent": 5}
+        self.db.create_build(build_id, request.model_dump())
+        self._update_progress(build_id, "meta_builder", "The Gardener is selecting seeds...", 5)
         start_time = time.time()
 
         try:
@@ -1028,6 +1029,7 @@ class PipelineOrchestrator:
             successful = [a for a in build_attempts if a.success]
             if not successful:
                 self._update_progress(build_id, "failed", "All build attempts failed", 100)
+                self.db.save_results(build_id, {"status": "failed", "error": "All builds failed", "build_id": build_id})
                 return {"status": "failed", "error": "All builds failed"}
 
             # PHASE 3: REVIEWER
@@ -1041,6 +1043,8 @@ class PipelineOrchestrator:
             winner = ranked_builds[0]
             winning_attempt = next((a for a in build_attempts if a.attempt_id == winner.attempt_id), None)
             if not winning_attempt:
+                self._update_progress(build_id, "failed", "Ranking failed", 100)
+                self.db.save_results(build_id, {"status": "failed", "error": "Ranking failed", "build_id": build_id})
                 return {"status": "failed", "error": "Ranking failed"}
 
             # PHASE 5: NOVELTY BUILDER
@@ -1070,35 +1074,50 @@ class PipelineOrchestrator:
                 download_path=zip_path, model_used=winning_attempt.model_used
             )
             self.leaderboard.add_entry(entry)
+            self.db.add_leaderboard_entry(entry, build_id=build_id)
 
             self._update_progress(build_id, "complete", "Build complete! Ready for download.", 100)
 
             results = {
-                "status": "success", "build_id": build_id, "request": request.dict(),
-                "tool_combinations": [t.dict() for t in tool_combinations],
-                "build_attempts": [a.dict() for a in build_attempts],
-                "reviews": [r.dict() for r in reviews],
-                "ranked_builds": [r.dict() for r in ranked_builds],
-                "winner": winner.dict(),
-                "novelty_attempts": [a.dict() for a in novelty_attempts],
+                "status": "success", "build_id": build_id, "request": request.model_dump(),
+                "tool_combinations": [t.model_dump() if hasattr(t, 'model_dump') else t.dict() for t in tool_combinations],
+                "build_attempts": [a.model_dump() if hasattr(a, 'model_dump') else a.dict() for a in build_attempts],
+                "reviews": [r.model_dump() if hasattr(r, 'model_dump') else r.dict() for r in reviews],
+                "ranked_builds": [r.model_dump() if hasattr(r, 'model_dump') else r.dict() for r in ranked_builds],
+                "winner": winner.model_dump() if hasattr(winner, 'model_dump') else winner.dict(),
+                "novelty_attempts": [a.model_dump() if hasattr(a, 'model_dump') else a.dict() for a in novelty_attempts],
                 "final_code": final_code, "download_path": zip_path,
-                "total_time_seconds": total_time, "leaderboard_entry": entry.dict()
+                "total_time_seconds": total_time, "leaderboard_entry": entry.model_dump() if hasattr(entry, 'model_dump') else entry.dict(),
+                "apps": {"download_path": zip_path},
             }
-            self.results[build_id] = results
+            self.db.save_results(build_id, results)
             return results
 
         except Exception as e:
             self._update_progress(build_id, "failed", f"Pipeline failed: {str(e)}", 100)
+            self.db.save_results(build_id, {"status": "failed", "error": str(e), "build_id": build_id})
             return {"status": "failed", "error": str(e)}
 
     def _update_progress(self, build_id, phase, message, percent):
         self.progress[build_id] = {"status": "running" if percent < 100 else "complete",
                                     "phase": phase, "message": message, "percent": percent,
                                     "timestamp": datetime.now().isoformat()}
+        try:
+            self.db.update_pipeline_state(
+                build_id, phase=phase, message=message, percent=float(percent),
+                status="failed" if phase == "failed" else None,
+            )
+        except Exception:
+            pass
 
     def get_progress(self, build_id):
-        return self.progress.get(build_id, {"status": "unknown", "phase": "unknown",
-                                            "message": "Build not found", "percent": 0})
+        mem = self.progress.get(build_id)
+        if mem:
+            return mem
+        db_progress = self.db.get_progress(build_id)
+        if db_progress.get("pipeline_status", "unknown") != "unknown":
+            return db_progress
+        return {"status": "unknown", "phase": "unknown", "message": "Build not found", "percent": 0}
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1235,9 +1254,9 @@ if(result.build_id){buildId=result.build_id;startPolling();}
 else showError(result.detail||result.error||'Build failed');
 }catch(err){showError('Network error: '+err.message);}
 });
-function startPolling(){if(pollInterval)clearInterval(pollInterval);pollInterval=setInterval(async()=>{try{const res=await fetch('/api/progress/'+buildId);if(!res.ok){const err=await res.json().catch(()=>({}));if(res.status===404)showError(err.detail||'Build not found');return;}const p=await res.json();updateProgress(p);if(p.status==='complete'||p.status==='failed'){clearInterval(pollInterval);if(p.status==='complete')loadResults(buildId);}}catch(err){console.error(err);}},2000);}
+function startPolling(){if(pollInterval)clearInterval(pollInterval);pollInterval=setInterval(async()=>{try{const res=await fetch('/api/progress/'+buildId);if(!res.ok){if(res.status===404)showError('Build not found');return;}const p=await res.json();updateProgress(p);if(p.status==='complete'||p.pipeline_status==='complete'){clearInterval(pollInterval);setTimeout(()=>loadResults(buildId),500);}else if(p.status==='failed'||p.pipeline_status==='failed'){clearInterval(pollInterval);loadResults(buildId);}}catch(err){console.error(err);}},2000);}
 function updateProgress(p){document.getElementById('progressFill').style.width=p.percent+'%';document.getElementById('progressMessage').textContent=p.message;document.querySelectorAll('.pipeline-step').forEach(s=>{s.classList.remove('active');if(s.dataset.phase===p.phase)s.classList.add('active');});}
-async function loadResults(id){try{const res=await fetch('/api/results/'+id);if(!res.ok){const err=await res.json().catch(()=>({}));showError(err.detail||'Results not ready');return;}const r=await res.json();if(r.status==='success'||r.winner)displayResults(r);else showError(r.detail||r.error||'No results available');}catch(err){showError('Failed to load results');}}
+async function loadResults(id){try{const res=await fetch('/api/results/'+id);if(res.status===202){return;}if(!res.ok){const err=await res.json().catch(()=>({}));showError(err.detail||'Results not ready');return;}const r=await res.json();if(r.status==='success'||r.winner)displayResults(r);else if(r.status==='failed')showError(r.error||'Build failed');else showError(r.detail||r.error||'No results available');}catch(err){showError('Failed to load results');}}
 function displayResults(r){const c=document.getElementById('resultsContent');c.innerHTML=`<div class="stats-grid"><div class="stat-card"><div class="stat-value">${r.winner.total_score}</div><div class="stat-label">Final Score / 100</div></div><div class="stat-card"><div class="stat-value">${r.winner.tool_stack_name}</div><div class="stat-label">Winning Stack</div></div><div class="stat-card"><div class="stat-value">${r.total_time_seconds.toFixed(1)}s</div><div class="stat-label">Build Time</div></div><div class="stat-card"><div class="stat-value">${r.novelty_attempts.filter(a=>a.success).length}/3</div><div class="stat-label">Novelty Iterations</div></div></div><h3>Rankings</h3><table><thead><tr><th>Rank</th><th>Stack</th><th>Score</th><th>Functionality</th><th>Quality</th><th>Novelty</th></tr></thead><tbody>${r.ranked_builds.map(b=>`<tr><td><strong>#${b.rank}</strong></td><td>${b.tool_stack_name}</td><td><span class="badge ${b.total_score>=80?'badge-success':b.total_score>=60?'badge-warning':''}">${b.total_score}</span></td><td>${b.functionality_score}</td><td>${b.code_quality_score}</td><td>${b.novelty_score}</td></tr>`).join('')}</tbody></table><h3>Generated Code Preview</h3><div class="code-preview">${r.final_code.substring(0,2000).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}...</div><a href="/api/download/${buildId}" class="download-btn">Download Complete Package</a>`;document.getElementById('resultsSection').classList.add('active');loadLeaderboardPreview();}
 function showError(m){if(!m||m==='undefined')m='An unknown error occurred';document.getElementById('progressMessage').textContent='ERROR: '+m;document.getElementById('progressFill').style.width='100%';document.getElementById('progressFill').style.background='var(--error)';}
 async function loadLeaderboardPreview(){try{const res=await fetch('/api/leaderboard?limit=5');const d=await res.json();const el=document.getElementById('leaderboardPreview');if(d.entries&&d.entries.length){el.innerHTML=`<table><thead><tr><th>Project</th><th>Type</th><th>Score</th><th>Stack</th><th>Date</th></tr></thead><tbody>${d.entries.map(e=>`<tr><td>${e.project_name}</td><td>${e.code_type}</td><td><span class="badge badge-success">${e.score}</span></td><td>${e.tool_stack}</td><td>${new Date(e.created_at).toLocaleDateString()}</td></tr>`).join('')}</tbody></table>`;}else{el.innerHTML='<p>No builds yet. Be the first!</p>';}}catch(err){console.error(err);}}
@@ -1335,38 +1354,71 @@ async def start_build(request: BuildRequest, background_tasks: BackgroundTasks):
 
 @app.get("/api/progress/{build_id}")
 async def get_progress(build_id: str):
-    return orchestrator.get_progress(build_id)
+    db = get_database()
+    build = db.get_build(build_id)
+    if not build:
+        raise HTTPException(status_code=404, detail="Build not found")
+    return db.get_progress(build_id)
 
 @app.get("/api/results/{build_id}")
 async def get_results(build_id: str):
-    results = orchestrator.db.get_results(build_id)
+    db = get_database()
+    build = db.get_build(build_id)
+    if not build:
+        raise HTTPException(status_code=404, detail="Build not found")
+    results = build.get("results")
     if not results:
-        raise HTTPException(status_code=404, detail="Build not found or not complete")
+        status = build.get("status", "unknown")
+        if status == "failed":
+            return JSONResponse(
+                status_code=200,
+                content={"status": "failed", "error": build.get("error", "Build failed"), "build_id": build_id},
+            )
+        if status == "complete":
+            return JSONResponse(
+                status_code=200,
+                content={"status": "complete", "build_id": build_id, "note": "Results not yet persisted"},
+            )
+        return JSONResponse(
+            status_code=202,
+            content={"status": status, "build_id": build_id, "message": f"Build is {status}, results not ready yet"},
+        )
     return results
 
 @app.get("/api/leaderboard")
 async def get_leaderboard(timeframe: str = "all_time", code_type: str = None, sort_by: str = "score", limit: int = 50):
-    entries = orchestrator.leaderboard.get_entries(timeframe, code_type, sort_by, limit)
-    stats = orchestrator.leaderboard.get_stats()
-    return {"entries": [e.model_dump() for e in entries], "stats": stats}
+    db = get_database()
+    entries = db.get_leaderboard_entries(timeframe, code_type, sort_by, limit)
+    stats = db.get_leaderboard_stats()
+    return {"entries": entries, "stats": stats}
 
 @app.post("/api/leaderboard/rate/{entry_id}")
 async def rate_entry(entry_id: str, rating: int = Form(...)):
     if not 1 <= rating <= 5:
         raise HTTPException(status_code=400, detail="Rating must be 1-5")
-    if not orchestrator.leaderboard.rate_entry(entry_id, rating):
+    db = get_database()
+    if not db.rate_leaderboard_entry(entry_id, rating):
         raise HTTPException(status_code=404, detail="Entry not found")
     return {"status": "success", "message": "Rating added"}
 
 @app.get("/api/download/{build_id}")
 async def download_build(build_id: str):
-    results = orchestrator.db.get_results(build_id)
-    if not results or not results.get("download_path"):
+    db = get_database()
+    build = db.get_build(build_id)
+    if not build:
+        raise HTTPException(status_code=404, detail="Build not found")
+    results = build.get("results")
+    download_path = None
+    if results and isinstance(results, dict):
+        apps = results.get("apps") or {}
+        download_path = apps.get("download_path") or results.get("download_path")
+    if not download_path:
+        download_path = build.get("output_path")
+    if not download_path:
         raise HTTPException(status_code=404, detail="Build or download not found")
-    zip_path = results["download_path"]
-    if not os.path.exists(zip_path):
+    if not os.path.exists(download_path):
         raise HTTPException(status_code=404, detail="File not found on disk")
-    return FileResponse(zip_path, media_type="application/zip", filename=f"gardener_build_{build_id}.zip")
+    return FileResponse(download_path, media_type="application/zip", filename=f"gardener_build_{build_id}.zip")
 
 @app.get("/api/download-file")
 async def download_file(path: str):
@@ -1376,7 +1428,7 @@ async def download_file(path: str):
 
 @app.get("/api/stats")
 async def get_stats():
-    return orchestrator.leaderboard.get_stats()
+    return get_database().get_leaderboard_stats()
 
 @app.get("/api/health")
 async def health_check():
